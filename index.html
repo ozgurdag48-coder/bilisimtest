@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KHK Bilişim Öğretmenliği Gelişmiş Sınav Portalı</title>
+    <title>KHK Bilişim Öğretmenliği - Adaptif Sınav Portalı</title>
     <style>
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
             --success-color: #2ecc71;
             --danger-color: #e74c3c;
-            --background-color: #f8f9fa;
+            --warning-color: #f39c12;
+            --background-color: #f4f6f7;
             --text-color: #2c3e50;
         }
 
@@ -30,7 +31,7 @@
             background: white;
             padding: 30px;
             border-radius: 14px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
         }
 
         h1, h2 {
@@ -46,7 +47,7 @@
             font-size: 16px;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             margin: 10px 5px;
             display: inline-block;
             font-weight: 600;
@@ -76,11 +77,10 @@
             border: 2px solid #e9ecef;
             padding: 20px;
             border-radius: 10px;
-            text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+            position: relative;
         }
 
         .topic-card:hover {
@@ -88,6 +88,25 @@
             background: #f1f9fe;
             transform: translateY(-2px);
         }
+
+        .topic-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+        }
+        .badge-easy { background-color: var(--success-color); }
+        .badge-medium { background-color: var(--warning-color); }
+        .badge-hard { background-color: var(--danger-color); }
 
         .page { display: none; }
         .active { display: block; }
@@ -133,11 +152,14 @@
             padding-top: 15px;
         }
 
-        .pool-info {
-            text-align: center;
-            font-size: 13px;
-            color: #7f8c8d;
-            margin-top: 5px;
+        .info-panel {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
         }
     </style>
 </head>
@@ -147,8 +169,8 @@
     
     <!-- ANA SAYFA -->
     <div id="homePage" class="page active">
-        <h1>KHK Bilişim Öğretmenliği Hazırlık</h1>
-        <p style="text-align:center; color:#7f8c8d;">Tekrar etmeyen dinamik soru havuzu sistemi (Her Test 10 Soru)</p>
+        <h1>KHK Bilişim Öğretmenliği Sınav Portalı</h1>
+        <p style="text-align:center; color:#7f8c8d; margin-bottom: 25px;">Yapay Zekaya Uygun Katmanlı, Yanlış Soruları Tekrar Eden Akıllı Sistem</p>
         <div class="topic-list" id="topicList"></div>
     </div>
 
@@ -156,10 +178,11 @@
     <div id="quizPage" class="page">
         <button class="btn btn-nav" onclick="goHome()">← Konu Listesine Dön</button>
         <h2 id="currentTopicTitle">Konu Başlığı</h2>
-        <div class="pool-info" id="poolRemainingInfo"></div>
+        
+        <div class="info-panel" id="topicInfoPanel"></div>
         
         <!-- Giriş Aşaması -->
-        <div id="setupArea" style="text-align: center; margin: 40px 0;">
+        <div id="setupArea" style="text-align: center; margin: 30px 0;">
             <button class="btn" id="btnCreateTest" onclick="generateTest()">10 Soruluk Test Oluştur</button>
             <div id="statusMessage" class="status-msg" style="display: none;"></div>
             <button class="btn btn-success" id="btnStartTest" style="display: none;" onclick="startTest()">Teste Başla</button>
@@ -185,8 +208,9 @@
         <div id="resultArea" style="display: none;">
             <h2>Test Tamamlandı!</h2>
             <div style="text-align: center; font-size: 22px; font-weight: bold; margin: 25px 0;" id="scoreBoard"></div>
+            <div style="text-align: center; font-size: 16px; margin-bottom: 25px; line-height: 1.6;" id="levelFeedback"></div>
             <div style="text-align: center;">
-                <button class="btn" id="btnRetry" onclick="retryTopic()">Bu Konudan Yeni Test Üret</button>
+                <button class="btn" onclick="retryTopic()">Yeni Test Üret</button>
             </div>
         </div>
     </div>
@@ -194,112 +218,119 @@
 </div>
 
 <script>
-    // GENİŞLETİLMİŞ VE ÇEŞİTLENDİRİLMİŞ GENİŞ KONU/SORU HAVUZU
+    // SEVİYELENDİRİLMİŞ AKADEMİK SORU HAVUZU
     const questionBank = {
-        "Donanım ve İşletim Sistemleri": [
-            { q: "İşlemcinin bir veri parçasını işlemek üzere beklediği, anakart üzerindeki en hızlı ve en küçük geçici bellek birimi hangisidir?", a: "Önbellek (Cache)", b: "RAM", c: "ROM", d: "Sanal Bellek", e: "SSD" },
-            { q: "Aşağıdakilerden hangisi tamamen açık kaynak kodlu ve özgür bir işletim sistemi çekirdeğidir?", a: "Linux", b: "Windows 11", c: "macOS", d: "MS-DOS", e: "iOS" },
-            { q: "Bilgisayara ilk enerji verildiğinde donanımları test eden (POST) ve işletim sisteminin yüklenmesini başlatan yazılım nerede tutulur?", a: "ROM (BIOS)", b: "RAM", c: "Sabit Disk", d: "İşlemci", e: "Sıralı Bellek" },
-            { q: "Linux tabanlı sistemlerde dosya izinlerini değiştirmek (Read, Write, Execute) için kullanılan temel terminal komutu hangisidir?", a: "chmod", b: "chown", c: "mkdir", d: "ls", e: "sudo" },
-            { q: "Aşağıdaki depolama teknolojilerinden hangisi mekanik dönen disklere sahip olmayıp tamamen yarı iletken hücrelerden oluşur?", a: "SSD", b: "HDD", c: "CD-RW", d: "DVD-ROM", e: "Disket" },
-            { q: "Onlu (Decimal) sistemdeki '25' sayısının İkili (Binary) sistemdeki tam karşılığı aşağıdakilerden hangisidir?", a: "11001", b: "10101", c: "11100", d: "10011", e: "11111" },
-            { q: "İşletim sisteminde çalışan her bir aktif program alt işlem parçacığına ne ad verilir?", a: "Process (Süreç)", b: "Thread", c: "Kernel", d: "Driver", e: "Daemon" },
-            { q: "Donanım birimleri ile işletim sistemi arasındaki iletişimi sağlayan, donanıma özel mikro yazılımlara ne ad verilir?", a: "Aygıt Sürücüsü (Driver)", b: "Derleyici", c: "Arayüz", d: "BIOS", e: "Yonga Seti" },
-            { q: "Aşağıdakilerden hangisi bilgisayar mimarisinde bir 'Veri Yolu' (Bus) türü değildir?", a: "Önbellek Yolu", b: "Veri Yolu (Data Bus)", c: "Adres Yolu (Address Bus)", d: "Kontrol Yolu (Control Bus)", e: "Sistem Yolu" },
-            { q: "İşlemcinin (CPU) mimarisinde aritmetiksel ve mantıksal işlemlerin yapıldığı ana hücre grubu hangisidir?", a: "ALU", b: "CU (Kontrol Birimi)", c: "Register", d: "BUS", e: "SRAM" },
-            { q: "Bilgisayar açılırken 'Non-System Disk or Disk Error' hatası alınıyorsa öncelikle hangi birim kontrol edilmelidir?", a: "Hard Disk / Önyükleme Sıralaması", b: "Ekran Kartı", c: "RAM Bellekler", d: "Ses Kartı", e: "Güç Kaynağı" },
-            { q: "Aşağıdakilerden hangisi bir işletim sisteminin çekirdek (Kernel) görevlerinden biri değildir?", a: "Kelime işlemci belgelerini düzenlemek", b: "Bellek yönetimi yapmak", c: "Dosya sistemini yönetmek", d: "İşlem planlaması (Scheduling) yapmak", e: "Giriş/Çıkış cihazlarını yönetmek" },
-            { q: "Pardus işletim sisteminde paket yüklemek ve güncellenmek için kullanılan paket yönetim sistemi hangisidir?", a: "APT / DPKG", b: "RPM", c: "EXE", d: "MSI", e: "APK" },
-            { q: "Bir veri depolama biriminde 'Sektör' ve 'İz (Track)' kavramları hangi donanımın fiziksel yapısını tanımlar?", a: "Sabit Disk (HDD)", b: "RAM Bellek", c: "Flash Bellek", d: "İşlemci", e: "Anakart" },
-            { q: "Anakart üzerinde bileşenlerin veri akışını ve koordinasyonunu sağlayan entegre devrelere (Kuzey ve Güney Köprüsü) ne ad verilir?", a: "Yonga Seti (Chipset)", b: "Soket", c: "Slot", d: "Port", e: "Transistör" }
-        ],
-        "Algoritma ve Programlama": [
-            { q: "Python programlama dilinde bir listeye yeni bir eleman eklemek için hangi metot kullanılır?", a: "append()", b: "add()", c: "insert_last()", d: "push()", e: "extend()" },
-            { q: "Yazılan kaynak kodunu satır satır okuyarak anında çalıştıran, nesne koduna dönüştürmeyen yazılım türü hangisidir?", a: "Yorumlayıcı (Interpreter)", b: "Derleyici (Compiler)", c: "Editör", d: "Hata Ayıklayıcı", e: "Bağlayıcı" },
-            { q: "Bir fonksiyonun kendi kendisini tekrar çağırması esasına dayanan programlama mantığına ne ad verilir?", a: "Rekürsif (Özyinelemeli)", b: "İteratif", c: "Nesne Yönelimli", d: "Senkron", e: "Modüler" },
-            { q: "Algoritmalarda eşkenar dörtgen (baklava dilimi) sembolü hangi aşamayı temsil eder?", a: "Karar / Koşul Kontrolü", b: "Veri Girişi", c: "Süreç / İşlem", d: "Döngü Başlangıcı", e: "Algoritma Sonu" },
-            { q: "Aşağıdaki değişken isimlerinden hangisi birçok programlama dilinde kurallara aykırıdır?", a: "1_sayi", b: "sayi_1", c: "sayi1", d: "_sayi", e: "SAYI" },
-            { q: "Bir dizideki elemanları sırayla yan yana karşılaştırarak büyük olanı sağa kaydırma esasına dayanan sıralama algoritması hangisidir?", a: "Kabarcık Sıralama (Bubble Sort)", b: "Hızlı Sıralama (Quick Sort)", c: "İkili Arama (Binary Search)", d: "Ekleme Sıralaması", e: "Seçmeli Sıralama" },
-            { q: "Nesne Yönelimli Programlamada (OOP), bir sınıfın özelliklerinin başka bir sınıfa aktarılmasına ne denir?", a: "Kalıtım (Inheritance)", b: "Kapsülleme", c: "Çok Biçimlilik", d: "Soyutlama", e: "İnşa Edici" },
-            { q: "Mantıksal 'AND' (VE) bağlacı kullanılan bir koşulda sonucun 'True' çıkması için ne gereklidir?", a: "Tüm koşulların True olması", b: "En az bir koşulun True olması", d: "Tüm koşulların False olması", d: "İlk koşulun True olması", e: "Koşulların birbirinden farklı olması" },
-            { q: "Python'da `range(2, 11, 3)` ifadesi hangi sayı serisini üretir?", a: "2, 5, 8", b: "2, 3, 4, 5, 6, 7, 8, 9, 10, 11", c: "2, 6, 10", d: "3, 6, 9", e: "5, 8, 11" },
-            { q: "Kodlama esnasında yapılan ve programın çalışmasını durdurmayan ancak yanlış sonuçlar üreten hata türü hangisidir?", a: "Mantıksal Hata (Logical)", b: "Sözdizimi Hatası (Syntax)", c: "Çalışma Zamanı Hatası (Runtime)", d: "Derleme Hatası", e: "Sistem Hatası" },
-            { q: "Bir fonksiyon içinde tanımlanan ve sadece o fonksiyon içinden erişilebilen değişkenlere ne ad verilir?", a: "Yerel Değişken (Local)", b: "Global Değişken", c: "Statik Değişken", d: "Parametre", e: "Sabit" },
-            { q: "Aşağıdakilerden hangisi blok tabanlı programlamaya örnek gösterilebilecek, çocuklara yönelik bir araçtır?", a: "Scratch", b: "Django", c: "Flutter", d: "Angular", e: "Laravel" },
-            { q: "Veri yapılarında 'Son Giren İlk Çıkar' (LIFO) prensibine göre çalışan doğrusal yapı hangisidir?", a: "Yığıt (Stack)", b: "Kuyruk (Queue)", c: "Bağlı Liste", d: "Ağaç (Tree)", e: "Graf" },
-            { q: "Bir algoritmanın karmaşıklığını ve performansını ifade etmek için kullanılan matematiksel gösterim hangisidir?", a: "Big O Gösterimi", b: "Matris", d: "Boole Cebri", d: "Logaritma", e: "Faktöriyel" },
-            { q: "Python dilinde değiştirilemez (Immutable) veri türü aşağıdakilerden hangisidir?", a: "Tuple (Demet)", b: "List (Liste)", c: "Dictionary (Sözlük)", d: "Set (Küme)", e: "User-Defined Object" }
-        ],
-        "Web Tasarımı ve Veritabanı": [
-            { q: "İlişkisel veritabanlarında bir tablodaki her satırı benzersiz (unique) şekilde tanımlayan alana ne ad verilir?", a: "Birincil Anahtar (Primary Key)", b: "Yabancı Anahtar", c: "İndeks", d: "Görünüm (View)", e: "Sanal Sütun" },
-            { q: "HTML sayfasında form verilerini sunucuya URL içinde gizleyerek, daha güvenli gönderen HTTP metodu hangisidir?", a: "POST", b: "GET", c: "PUT", d: "DELETE", e: "HEAD" },
-            { q: "Veritabanında mevcut bir tablodaki verileri güncellemek için hangi SQL komutu kullanılır?", a: "UPDATE", b: "ALTER", c: "MODIFY", d: "INSERT", e: "REFRESH" },
-            { q: "CSS'te bir elementin dış kenar boşluğunu (diğer elementlerle arasındaki mesafeyi) ayarlayan özellik hangisidir?", a: "margin", b: "padding", c: "border", d: "spacing", e: "width" },
-            { q: "Aşağıdakilerden hangisi bir NoSQL (İlişkisel Olmayan) veritabanı yönetim sistemidir?", a: "MongoDB", b: "MySQL", c: "PostgreSQL", d: "MS SQL Server", e: "Oracle" },
-            { q: "Bir web sitesinin arama motorlarında üst sıralara çıkması için yapılan optimizasyon çalışmalarının genel adı nedir?", a: "SEO", b: "W3C", c: "CMS", d: "UI/UX", e: "FTP" },
-            { q: "HTML'de tıklandığında yeni bir sekmede açılan link oluşturmak için hangi nitelik eklenmelidir?", a: "target='_blank'", b: "rel='new'", c: "href='browser'", d: "window='new'", e: "type='tab'" },
-            { q: "Veritabanında verilerin tekrarlanmasını önlemek ve tutarlılığı sağlamak için tabloları ayrıştırma sürecine ne denir?", a: "Normalizasyon", b: "İndeksleme", c: "Kapsülleme", d: "Mimarileştirme", e: "Trigger" },
-            { q: "JavaScript'te bir değişkenin veri türünü öğrenmek için hangi operatör kullanılır?", a: "typeof", b: "instanceof", c: "dataType", d: "varType", e: "check" },
-            { q: "CSS'te 'id' seçicisi tanımlanırken hangi sembolle başlanır?", a: "# (Kare)", b: ". (Nokta)", c: "* (Yıldız)", d: "@ (At)", e: "$ (Dolar)" },
-            { q: "Veritabanından benzersiz kayıtları çekmek, tekrarlayan satırları engellemek için kullanılan SQL ifadesi hangisidir?", a: "DISTINCT", b: "UNIQUE", c: "GROUP BY", d: "ORDER BY", e: "HAVING" },
-            { q: "HTML5 ile birlikte gelen ve tarayıcıda eklentisiz grafik/çizim yapmayı sağlayan etiket hangisidir?", a: "&lt;canvas&gt;", b: "&lt;svg&gt;", c: "&lt;paint&gt;", d: "&lt;draw&gt;", e: "&lt;media&gt;" },
-            { q: "Aşağıdakilerden hangisi istemci tarafında (Client-side) koşan bir JavaScript kütüphanesi veya framework'ü değildir?", a: "Node.js", b: "React", c: "Vue.js", d: "Angular", e: "jQuery" },
-            { q: "Veritabanında belirli şartlara göre otomatik tetiklenen ve çalışan SQL kod bloklarına ne ad verilir?", a: "Trigger (Tetikleyici)", b: "Procedure", c: "Function", d: "View", e: "Index" },
-            { q: "Web tarayıcılarında JavaScript'in güvenli çalışmasını sağlayan ve yerel dosyalara erişimini kısıtlayan güvenlik modeline ne denir?", a: "Sandbox (Kum Havuzu)", b: "Firewall", c: "SSL", d: "CORS", e: "Encryption" }
-        ],
-        "Bilgisayar Ağları ve Siber Güvenlik": [
-            { q: "Ağ cihazlarına dinamik olarak otomatik IP adresi, alt ağ maskesi ve ağ geçidi dağıtan protokol hangisidir?", a: "DHCP", b: "DNS", c: "FTP", d: "NAT", e: "SNMP" },
-            { q: "OSI referans modelinde yönlendirme (routing) işlemlerinin yapıldığı ve IP protokolünün çalıştığı katman hangisidir?", a: "Ağ Katmanı (Network)", b: "Taşıma Katmanı", c: "Veri Bağı Katmanı", d: "Fiziksel Katman", e: "Uygulama Katmanı" },
-            { q: "Hedef sistemi gereksiz trafik yağmuruna tutarak hizmet veremez hale getirmeyi amaçlayan siber saldırı türü hangisidir?", a: "DDoS", b: "Phishing (Oltalama)", c: "Brute Force", d: "Man-in-the-Middle", e: "SQL Injection" },
-            { q: "E-posta gönderimi (transferi) için kullanılan varsayılan ağ protokolü aşağıdakilerden hangisidir?", a: "SMTP", b: "POP3", c: "IMAP", d: "FTP", e: "HTTP" },
-            { q: "Bir ağ kartının (NIC) üretim aşamasında üzerine kazınan değiştirilemez fiziksel donanım adresine ne denir?", a: "MAC Adresi", b: "IP Adresi", c: "Port Numarası", d: "Subnet Mask", e: "Gateway" },
-            { q: "Kullanıcıları sahte web siteleriyle (örneğin sahte banka sayfası) aldatarak şifrelerini çalma yöntemine ne ad verilir?", a: "Oltalama (Phishing)", b: "Ransomware", c: "Spyware", d: "Trojan", e: "Spoofing" },
-            { q: "Ağdaki veri paketlerini inceleyerek trafiği koklayan ve analiz eden yazılımların genel adı nedir?", a: "Sniffer", b: "Firewall", c: "Antivirüs", d: "Proxy", e: "Gateway" },
-            { q: "Simetrik şifreleme algoritmalarında şifreleme ve deşifreleme işlemleri için kaç adet anahtar kullanılır?", a: "1", b: "2", c: "3", d: "4", e: "Sonsuz" },
-            { q: "Yerel ağdaki özel IP adreslerini internete çıkarken tek bir kamu (Public) IP adresine dönüştüren teknoloji hangisidir?", a: "NAT", b: "DNS", c: "DHCP", d: "VLAN", e: "DMZ" },
-            { q: "Kullanıcının bilgisayarına sızarak tüm dosyaları şifreleyen ve açmak için para talep eden zararlı yazılım türü hangisidir?", a: "Fidye Yazılımı (Ransomware)", b: "Solucan (Worm)", c: "Adware", d: "Keylogger", e: "Rootkit" },
-            { q: "Uzak bilgisayarlara komut satırı üzerinden şifreli ve güvenli bağlantı sağlayan ağ protokolü hangisidir?", a: "SSH", b: "Telnet", c: "FTP", d: "RDP", e: "HTTP" },
-            { q: "Aşağıdakilerden hangisi bir web uygulama güvenliği açığı olup, veritabanına doğrudan sızma imkanı verir?", a: "SQL Injection", b: "XSS", d: "CSRF", d: "Buffer Overflow", e: "Port Scanning" },
-            { q: "İnternet dünyasında 'Üçlü El Sıkışma' (Three-Way Handshake) hangi protokolün bağlantı kurulumunda gerçekleşir?", a: "TCP", b: "UDP", c: "ICMP", d: "ARP", e: "DNS" },
-            { q: "Ağ trafiğini mantıksal olarak bölerek aynı switch üzerinde farklı ağ grupları oluşturmaya ne ad verilir?", a: "VLAN", b: "Subnetting", c: "Routing", d: "Bridging", e: "Trunking" },
-            { q: "Kablosuz ağlarda (Wi-Fi) güncel olarak kullanılan en güvenli şifreleme standardı hangisidir?", a: "WPA3", b: "WEP", c: "WPA", d: "WPA2", e: "WPS" }
-        ],
-        "Eğitim Bilimleri ve Formasyon": [
-            { q: "Öğrencinin yeni bilgileri eski şemalarına uydurması (Özümseme) ve şemalarını geliştirmesi (Uyumsama) hangi kuramcının gelişim ilkeleridir?", a: "Piaget", b: "Vygotsky", c: "Bruner", d: "Skinner", e: "Bandura" },
-            { q: "Öğretmenin konuyu merkezde tutup, adım adım anlatıp, örnekler vererek ilke ve genellemelere ulaştığı öğretim stratejisi hangisidir?", a: "Sunuş Yoluyla Öğretim", b: "Buluş Yoluyla Öğretim", c: "Araştırma-İnceleme", d: "Proje Tabanlı Öğretim", e: "Tam Öğrenme" },
-            { q: "Bilişim dersinde laboratuvar kurallarını ihlal eden bir öğrencinin bilgisayar kullanma hakkının elinden alınması hangi edimsel koşullanma sürecidir?", a: "II. Tip Ceza (Mahrum Bırakma)", b: "I. Tip Ceza", c: "Olumsuz Pekiştirme", d: "Sönme", e: "Ayırt Etme" },
-            { q: "Öğrencilerin gerçek hayattaki bir probleme bilişim araçlarını kullanarak somut, özgün ve sergilenebilir bir ürün geliştirdikleri yaklaşım hangisidir?", a: "Proje Tabanlı Öğrenme", b: "Mikro Öğretim", c: "Beyin Fırtınası", d: "Anlatım Yöntemi", e: "Programlı Öğretim" },
-            { q: "Eğitimde teknoloji entegrasyonunu 'İkame, Artırma, Değiştirme ve Yeniden Tanımlama' aşamalarıyla açıklayan model hangisidir?", a: "SAMR Modeli", b: "TPAB (TPACK)", c: "ADDIE Modeli", d: "Bloom Taksonomisi", e: "Gagne'nin Öğretim Modeli" },
-            { q: "Öğrencilerin bir konu hakkındaki fikirlerini, ön bilgilerini ve kavram yanılgılarını görsel şemalarla haritalandırdığı öğretim materyali hangisidir?", a: "Kavram Haritası", b: "Çalışma Yaprağı", c: "Ders Planı", d: "Rubrik", e: "Portfolyo" },
-            { q: "Sınıf yönetiminde öğretmen ipuçları vermesine rağmen kural dışı davranan öğrenciye karşı en son uygulanması gereken strateji hangisidir?", a: "Okul yönetimine / disipline sevk etmek", b: "Öğrenciyle göz teması kurmak", c: "Sorun çıkaran öğrencinin yanına yürümek", d: "Soru sorarak dikkatini çekmek", e: "Derse kısa bir ara vermek" },
-            { q: "Bloom'un Yenilenmiş Taksonomisine göre, bir öğrencinin sıfırdan özgün bir Python kodu yazması hangi bilişsel basamaktadır?", a: "Yaratma (Creating)", b: "Değerlendirme", c: "Analiz", d: "Uygulama", e: "Anlama" },
-            { q: "Bilişim teknolojileri dersinde engelli veya özel gereksinimli öğrencilerin eğitim süreçlerine dahil edilmesini sağlayan teknolojilere ne ad verilir?", a: "Destekleyici (Yardımcı) Teknolojiler", b: "Giyilebilir Teknolojiler", d: "Eğitsel Oyunlar", d: "Sosyal Medya", e: "Bulut Teknolojileri" },
-            { q: "Geleneksel eğitim yöntemlerinin aksine, teorik anlatımın evde video ile yapıldığı, okulda ise uygulama ve ödevlerin yapıldığı model hangisidir?", a: "Ters Yüz Edilmiş Sınıf (Flipped Classroom)", b: "Harmanlanmış Öğrenme", c: "Uzaktan Eğitim", d: "Buluş Yolu", e: "İşbirlikli Öğrenme" },
-            { q: "Bir testin ölçmek istediği özelliği başka değişkenlerle karıştırmadan tam ve doğru olarak ölçebilme derecesine ne ad verilir?", a: "Geçerlik", b: "Güvenirlik", c: "Kullanışlılık", d: "Objektiflik", e: "Ayırt Edicilik" },
-            { q: "Öğrencilerin dijital ortamlarda gerçekleştirdiği ödev, proje ve sınavların toplandığı dijital gelişim dosyasına ne ad verilir?", a: "E-Portfolyo", b: "E-Okul", c: "LMS", d: "Rubrik", e: "Blog" }
-        ]
+        "Donanım ve Sayı Sistemleri": {
+            1: [ // Kolay Seviye
+                { q: "Aşağıdakilerden hangisi temel bir bilgisayar sistemindeki dış donanım birimlerinden biridir?", a: "Yazıcı", b: "Anakart", c: "RAM Bellek", d: "İşlemci", e: "Ekran Kartı" },
+                { q: "Verilerin elektrik kesildiğinde tamamen kaybolduğu, bilgisayarın çalışma belleği hangisidir?", a: "RAM", b: "ROM", c: "Sabit Disk", d: "Flash Bellek", e: "Optik Disk" },
+                { q: "İşlemcinin (CPU) çalışma hızını ifade eden temel ölçü birimi nedir?", a: "Hertz (GHz)", b: "Byte (GB)", c: "RPM", d: "Watt", e: "Bps" },
+                { q: "Aşağıdakilerden hangisi sadece bir veri giriş (girdi) birimidir?", a: "Klavye", b: "Yazıcı", d: "Hoparlör", d: "Ekran", e: "Projeksiyon Cihazı" }
+            ],
+            2: [ // Orta Seviye
+                { q: "İkili (Binary) sistemdeki '1101' sayısının onlu (Decimal) sayı sistemindeki karşılığı nedir?", a: "13", b: "11", c: "9", d: "15", e: "10" },
+                { q: "Anakart üzerindeki bileşenlerin kendi aralarındaki veri koordinasyonunu sağlayan denetçi entegrelere ne denir?", a: "Yonga Seti (Chipset)", b: "ROM", c: "Soket", d: "Veri Yolu", e: "Transistör" },
+                { q: "Aşağıdakilerden hangisi mekanik dönen parçalara sahip olmayıp tamamen flash hücrelerden üretilen depolama aygıtıdır?", a: "SSD", b: "HDD", c: "CD-ROM", d: "Disket", e: "Şerit Sürücü" },
+                { q: "Bilgisayara güç verildiğinde donanım birimlerini ilk test eden (POST) mikro kod yazılımı nerede saklanır?", a: "ROM", b: "RAM", c: "Önbellek", d: "Sabit Disk", e: "İşlemci Çekirdeği" }
+            ],
+            3: [ // Zor Seviye
+                { q: "İşlemcinin bir veriyi işlemek üzere beklerken kullandığı, doğrudan CPU çekirdeğine gömülü en hızlı bellek mimarisi hangisidir?", a: "Önbellek (L1/L2/L3 Cache)", b: "DRAM", c: "Sanal Bellek", d: "EEPROM", e: "Kayıtçı (Register)" },
+                { q: "İşlemcinin iç yapısında yer alan, matematiksel, aritmetiksel ve mantıksal kararların tümünü üstlenen birim hangisidir?", a: "ALU (Arithmetic Logic Unit)", b: "CU (Control Unit)", c: "Cache", d: "System Bus", e: "Clock Generator" },
+                { q: "Onlu tabandaki '43' sayısının Onaltılık (Hexadecimal) sayı sistemindeki karşılığı aşağıdakilerden hangisidir?", a: "2B", b: "2A", c: "3B", d: "1F", e: "43" },
+                { q: "Bilgisayar açılışında 'Non-System Disk or Disk Error' uyarısı alınıyorsa öncelikli olarak hangi mimari katman kontrol edilmelidir?", a: "MBR/GPT Tablosu ve Boot Sıralaması", b: "RAM Slotları Güç Seviyesi", c: "Ekran Kartı Grafik Veri Yolu", d: "Kuzey Köprüsü Entegresi", e: "BIOS Pilinin Voltajı" }
+            ]
+        },
+        "Algoritma ve Programlama": {
+            1: [
+                { q: "Algoritmaların geometrik şekiller ve oklar kullanılarak görselleştirilmiş haline ne ad verilir?", a: "Akış Şeması", b: "Pseudo Kod", c: "Derleme", d: "Değişken Tanımlama", e: "Fonksiyon" },
+                { q: "Python programlama dilinde ekrana veya konsola çıktı yazdırmak için hangi fonksiyon kullanılır?", a: "print()", b: "input()", c: "echo()", d: "write()", e: "log()" },
+                { q: "Bir programda kod bloğunun belirli bir koşul sürdüğü müddetçe tekrarlanmasını sağlayan yapı hangisidir?", a: "Döngü (Loop)", b: "Koşullu Dallanma", c: "Değişken", d: "Sınıf", e: "Dizi" },
+                { q: "Akış şemalarında eşkenar dörtgen (baklava dilimi) şekli neyi sembolize eder?", a: "Karar / Koşul Kontrolü", b: "Veri Girişi", c: "İşlem / Süreç", d: "Başla / Bitir", e: "Döngü Yapısı" }
+            ],
+            2: [
+                { q: "Yazılan kaynak kodu çalıştırmadan önce tamamen makine diline çevirerek tek bir çalıştırılabilir dosya üreten sistem nedir?", a: "Derleyici (Compiler)", b: "Yorumlayıcı (Interpreter)", c: "Editör", d: "Hata Ayıklayıcı", e: "Bağlayıcı" },
+                { q: "Aşağıdakilerden hangisi birçok dilde değişken tanımlama kurallarına aykırı bir ifadedir?", a: "2_toplam", b: "toplam_2", c: "_toplam", d: "toplam2", e: "TOPLAM" },
+                { q: "Python dilinde tanımlanan `liste = [10, 20, 30]` yapısında `liste[1]` çağrıldığında hangi değer döner?", a: "20", b: "10", c: "30", d: "Hata Verir", e: "0" },
+                { q: "Mantıksal 'AND' (VE) operatörü içeren bir koşul bloğunun true dönmesi için hangi şart aranır?", a: "Bağlı tüm koşulların True olması", b: "En az bir koşulun True olması", c: "Tüm koşulların False olması", d: "İlk koşulun True olması", e: "Son koşulun False olması" }
+            ],
+            3: [
+                { q: "Bir fonksiyonun problem çözümü esnasında kendi gövdesi içinden tekrar kendisini çağırması mantığına ne ad verilir?", a: "Rekürsif (Özyinelemeli)", b: "İteratif", c: "Polimorfizm", d: "Kapsülleme", e: "Senkronizasyon" },
+                { q: "Nesne Yönelimli Programlamada (OOP), bir üst sınıfın metot ve özelliklerinin alt sınıfa geçmesini sağlayan ilke hangisidir?", a: "Kalıtım (Inheritance)", b: "Kapsülleme", c: "Soyutlama", d: "Çok Biçimlilik", e: "Arayüz Tanımlama" },
+                { q: "Veri yapılarında 'Son Giren İlk Çıkar' (LIFO) çalışma prensibine sahip doğrusal veri modeli hangisidir?", a: "Yığıt (Stack)", b: "Kuyruk (Queue)", c: "Bağlı Liste", d: "Ağaç (Tree)", e: "Graf" },
+                { q: "Algoritmaların zaman ve alan performans sınırlarını matematiksel üst limitlerle belirten gösterim biçimi hangisidir?", a: "Big O Gösterimi", b: "Boole Cebri", c: "Matris Fonksiyonu", d: "Logaritmik Ölçek", e: "Doğrusallık Endeksi" }
+            ]
+        },
+        "Ağlar ve Siber Güvenlik": {
+            1: [
+                { q: "Ağ üzerindeki cihazların internete çıkabilmek için sahip olduğu benzersiz mantıksal adres türü hangisidir?", a: "IP Adresi", b: "MAC Adresi", c: "Port Numarası", d: "DNS", e: "URL" },
+                { q: "Aynı bina veya oda içerisindeki bilgisayarların bağlanmasıyla kurulan yerel ağ türünün kısaltması nedir?", a: "LAN", b: "WAN", c: "MAN", d: "PAN", e: "VPN" },
+                { q: "Kullanıcıları kandırarak sahte web sayfaları üzerinden şifrelerini ele geçirmeyi amaçlayan siber saldırı türü hangisidir?", a: "Oltalama (Phishing)", b: "Ransomware", c: "DDoS", d: "Trojan", e: "Brute Force" },
+                { q: "Web sitelerinin IP adreslerini akılda kalıcı alan adlarına (Domain) çözümleyen ağ servisi hangisidir?", a: "DNS", b: "DHCP", c: "FTP", d: "HTTP", e: "NAT" }
+            ],
+            2: [
+                { q: "Ağdaki bilgisayarlara otomatik olarak IP adresi, alt ağ maskesi ve varsayılan ağ geçidi atayan protokol hangisidir?", a: "DHCP", b: "DNS", c: "SMTP", d: "ARP", e: "ICMP" },
+                { q: "Ağ kartının (NIC) üretimi esnasında içine kazınan ve değiştirilemeyen 48 bitlik fiziksel donanım adresine ne denir?", a: "MAC Adresi", b: "IP Adresi", c: "Subnet Mask", d: "Port", e: "Gateway" },
+                { q: "E-posta gönderim protokolü (Mail Transfer) olarak çalışan varsayılan TCP protokolü hangisidir?", a: "SMTP", b: "POP3", c: "IMAP", d: "FTP", e: "Telnet" },
+                { q: "Ağ trafiğini izleyerek yetkisiz erişimleri, sızma girişimlerini engelleyen donanım veya yazılımların genel adı nedir?", a: "Güvenlik Duvarı (Firewall)", b: "Router", c: "Switch", d: "Access Point", e: "Modem" }
+            ],
+            3: [
+                { q: "OSI referans modelinde paket yönlendirme (Routing) işlevinin gerçekleştiği ve IP başlıklarının eklendiği katman hangisidir?", a: "Ağ Katmanı (Network)", b: "Taşıma Katmanı", c: "Veri Bağı Katmanı", d: "Fiziksel Katman", e: "Uygulama Katmanı" },
+                { q: "Hedef sunucunun bant genişliğini veya sistem kaynaklarını yapay trafikle tüketerek sistemi erişilmez kılan saldırı türü nedir?", a: "DDoS", b: "SQL Injection", c: "XSS Cross Site", d: "Man-in-the-Middle", e: "Buffer Overflow" },
+                { q: "Yerel ağdaki özel IP adreslerini internete çıkarken tek bir genel (Public) IP adresine eşleyen teknoloji hangisidir?", a: "NAT (Network Address Translation)", b: "VLAN", c: "Subnetting", d: "DMZ", e: "DHCP Spoofing" },
+                { q: "Ağ bağlantı kurulumunda güvenli veri akışı sağlamak için yürütülen 'Üçlü El Sıkışma' (3-Way Handshake) hangi protokole aittir?", a: "TCP", b: "UDP", c: "ICMP", d: "ARP", e: "IGMP" }
+            ]
+        }
     };
 
-    // HAFIZA SİSTEMİ (Çözülen soru id'lerini localstorage'da tutarak mükerrer soruyu engeller)
-    let solvedQuestionsHistory = JSON.parse(localStorage.getItem('khk_solved_history')) || {};
+    // AKILLI ÖĞRENME HAFIZA DURUMU
+    // Her konunun seviyesini, elenen (doğru bilinen) ve öncelikli (yanlış bilinen) sorularını ayrı saklar.
+    let appState = JSON.parse(localStorage.getItem('khk_adaptive_state')) || {};
 
     let selectedTopic = "";
     let currentQuestions = [];
     let currentQuestionIdx = 0;
     let score = 0;
     let hasAnswered = false;
+    let wrongQuestionsInThisTest = [];
     const TEST_LIMIT = 10;
 
+    // Uygulama Açılışı: Konu Listesini Render Et
     document.addEventListener("DOMContentLoaded", () => {
+        renderTopicList();
+    });
+
+    function renderTopicList() {
         const listContainer = document.getElementById("topicList");
+        listContainer.innerHTML = "";
+        
         Object.keys(questionBank).forEach(topic => {
+            // Konu ilk kez açılıyorsa hafıza kaydını ilklendir
+            if (!appState[topic]) {
+                appState[topic] = {
+                    currentLevel: 1,
+                    wrongQueue: [], // Yanlış yapılan ve tekrar sorulacak sorular
+                    correctList: []  // Doğru yapılıp elenmiş sorular
+                };
+            }
+
+            const state = appState[topic];
             const card = document.createElement("div");
             card.className = "topic-card";
-            card.innerText = topic;
+            
+            let lvlBadge = "";
+            if(state.currentLevel === 1) lvlBadge = `<span class="badge badge-easy">Seviye: Kolay (Lvl 1)</span>`;
+            else if(state.currentLevel === 2) lvlBadge = `<span class="badge badge-medium">Seviye: Orta (Lvl 2)</span>`;
+            else if(state.currentLevel === 3) lvlBadge = `<span class="badge badge-hard">Seviye: Zor (Lvl 3)</span>`;
+
+            card.innerHTML = `
+                <div class="topic-title">${topic}</div>
+                <div>${lvlBadge}</div>
+            `;
             card.onclick = () => loadTopic(topic);
             listContainer.appendChild(card);
         });
-    });
+        localStorage.setItem('khk_adaptive_state', JSON.stringify(appState));
+    }
 
     function loadTopic(topic) {
         selectedTopic = topic;
@@ -307,31 +338,27 @@
         document.getElementById("quizPage").classList.add("active");
         document.getElementById("currentTopicTitle").innerText = topic;
         
-        if(!solvedQuestionsHistory[selectedTopic]) {
-            solvedQuestionsHistory[selectedTopic] = [];
-        }
-        
-        updatePoolInfo();
+        updateInfoPanel();
         resetQuizInterface();
     }
 
-    function updatePoolInfo() {
-        let total = questionBank[selectedTopic].length;
-        let solved = solvedQuestionsHistory[selectedTopic].length;
+    function updateInfoPanel() {
+        const state = appState[selectedTopic];
+        const panel = document.getElementById("topicInfoPanel");
         
-        // Eğer havuz tamamen bittiyse hafızayı bu konu için sıfırla (Sonsuz döngü koruması)
-        if(solved >= total) {
-            solvedQuestionsHistory[selectedTopic] = [];
-            localStorage.setItem('khk_solved_history', JSON.stringify(solvedQuestionsHistory));
-            solved = 0;
-        }
-
-        document.getElementById("poolRemainingInfo").innerText = `Bu konuda toplam ${total} soru var. (Görülmeyen/Kalan Soru: ${total - solved})`;
+        let levelText = state.currentLevel === 1 ? "Kolay" : state.currentLevel === 2 ? "Orta" : "Zor";
+        
+        panel.innerHTML = `
+            <strong>Mevcut Seviyeniz:</strong> ${levelText} (Seviye ${state.currentLevel})<br>
+            <strong>Yanlış Hafızasındaki Soru Sayısı:</strong> ${state.wrongQueue.length} (Bu sorular yeni testte öncelikli gelecektir)<br>
+            <small style="color:#7f8c8d;">* Test sonunda başarı oranınız %70 üstü olursa seviyeniz artar, %40 altında kalırsa düşer.</small>
+        `;
     }
 
     function goHome() {
         document.getElementById("quizPage").classList.remove("active");
         document.getElementById("homePage").classList.add("active");
+        renderTopicList(); // Seviye değişimlerini ana sayfada güncellemek için yeniden çiz
     }
 
     function resetQuizInterface() {
@@ -341,47 +368,54 @@
         document.getElementById("btnStartTest").style.display = "none";
         document.getElementById("testArea").style.display = "none";
         document.getElementById("resultArea").style.display = "none";
+        wrongQuestionsInThisTest = [];
     }
 
-    // HAFIZA ONAYLI AKILLI TEST OLUŞTURMA ALGORİTMASI
+    // ADAPTİF VE YANLIŞ ÖNCELİKLİ TEST OLUŞTURMA MOTORU
     function generateTest() {
         const btnCreate = document.getElementById("btnCreateTest");
         const statusMsg = document.getElementById("statusMessage");
         const btnStart = document.getElementById("btnStartTest");
 
         btnCreate.style.display = "none";
-        statusMsg.innerText = "Daha önce çözmediğiniz sorular taranıyor ve test oluşturuluyor...";
+        statusMsg.innerText = "Kişiselleştirilmiş soru yapısı kurgulanıyor...";
         statusMsg.style.display = "block";
 
         setTimeout(() => {
-            statusMsg.innerText = "10 Soruluk benzersiz test başarıyla oluşturuldu!";
+            statusMsg.innerText = "Sınavınız profilinize uygun formatta başarıyla oluşturuldu!";
             btnStart.style.display = "inline-block";
             
-            let allTopicQuestions = questionBank[selectedTopic];
-            let historyList = solvedQuestionsHistory[selectedTopic];
+            const state = appState[selectedTopic];
+            const activeLevel = state.currentLevel;
 
-            // Çözülmemiş soruları ayıkla
-            let unSolvedPool = allTopicQuestions.filter(q => !historyList.includes(q.q));
+            // 1. Mevcut zorluk seviyesindeki tüm ana havuzu al
+            let levelPool = [...questionBank[selectedTopic][activeLevel]];
 
-            // Eğer havuzda 10'dan az çözülmemiş soru kaldıysa, mecburen çözülenlerden de ekle ama karıştır
-            if(unSolvedPool.length < TEST_LIMIT) {
-                let diff = TEST_LIMIT - unSolvedPool.length;
-                let solvedPool = allTopicQuestions.filter(q => historyList.includes(q.q));
-                shuffleArray(solvedPool);
-                unSolvedPool = unSolvedPool.concat(solvedPool.slice(0, diff));
+            // 2. Yanlış kuyruğunda bekleyen soruları belirle (Eğer mevcut seviyede var iseler)
+            let wrongPool = levelPool.filter(q => state.wrongQueue.includes(q.q));
+            
+            // 3. Daha önce hiç doğru yapılmamış normal soruları filtrele
+            let freshPool = levelPool.filter(q => !state.correctList.includes(q.q) && !state.wrongQueue.includes(q.q));
+
+            // Karıştır
+            shuffleArray(wrongPool);
+            shuffleArray(freshPool);
+
+            // Önce yanlışları, yetmezse yeni soruları ekleyerek nihai ham listeyi kur
+            let rawSelection = wrongPool.concat(freshPool);
+
+            // Eğer havuzda hiç soru kalmadıysa veya yetersizse (örneğin her şey doğru bilindiyse) kilitlenmemek için doğru listesini temizle sıfırla
+            if(rawSelection.length < TEST_LIMIT) {
+                state.correctList = [];
+                rawSelection = [...levelPool];
+                shuffleArray(rawSelection);
             }
 
-            // Seçilen soruları karıştır ve ilk 10 tanesini al
-            shuffleArray(unSolvedPool);
-            let selectedRaw = unSolvedPool.slice(0, TEST_LIMIT);
+            // Tam olarak 10 adet soruyu kesip alıyoruz
+            let finalRawQuestions = rawSelection.slice(0, TEST_LIMIT);
 
-            // Şıkları kendi içinde karıştırarak test formatına getir
-            currentQuestions = selectedRaw.map(qItem => {
-                // Soru metnini çözülenler geçmişine ekle
-                if(!historyList.includes(qItem.q)) {
-                    historyList.push(qItem.q);
-                }
-
+            // Şıkları her soru için ayrı ayrı dağıtıp 5 şıklı yapıya büründür
+            currentQuestions = finalRawQuestions.map(qItem => {
                 let options = [
                     { text: qItem.a, isCorrect: true },
                     { text: qItem.b, isCorrect: false },
@@ -390,18 +424,12 @@
                     { text: qItem.e, isCorrect: false }
                 ];
                 return {
-                    rawQuestionKey: qItem.q,
-                    question: qItem.q,
+                    text: qItem.q,
                     options: shuffleArray(options)
                 };
             });
 
-            // Hafızayı kaydet
-            solvedQuestionsHistory[selectedTopic] = historyList;
-            localStorage.setItem('khk_solved_history', JSON.stringify(solvedQuestionsHistory));
-            updatePoolInfo();
-
-        }, 1000); 
+        }, 800); 
     }
 
     function startTest() {
@@ -420,7 +448,7 @@
         
         let qData = currentQuestions[currentQuestionIdx];
         document.getElementById("questionTracker").innerText = `Soru: ${currentQuestionIdx + 1} / ${TEST_LIMIT}`;
-        document.getElementById("questionText").innerHTML = qData.question;
+        document.getElementById("questionText").innerText = qData.text;
 
         const optionsList = document.getElementById("optionsList");
         optionsList.innerHTML = "";
@@ -430,35 +458,48 @@
             const li = document.createElement("li");
             li.className = "option-item";
             li.innerHTML = `<strong>${prefix[idx]})</strong> ${opt.text}`;
-            li.onclick = () => checkAnswer(li, opt.isCorrect);
+            li.onclick = () => checkAnswer(li, opt);
             optionsList.appendChild(li);
         });
     }
 
-    function checkAnswer(selectedLi, isCorrect) {
+    function checkAnswer(selectedLi, selectedOpt) {
         if (hasAnswered) return;
         hasAnswered = true;
 
         const optionsList = document.getElementById("optionsList").children;
+        const currentQ = currentQuestions[currentQuestionIdx];
 
-        if (isCorrect) {
+        if (selectedOpt.isCorrect) {
             selectedLi.classList.add("correct");
             document.getElementById("feedbackMessage").innerHTML = "<span style='color:var(--success-color);'>✓ Doğru</span>";
             score++;
             document.getElementById("scoreTracker").innerText = `Doğru: ${score}`;
+            
+            // Eğer bu soru daha önce yanlış listesindeyse artık temizle (başarıyla bildiniz)
+            let wIdx = appState[selectedTopic].wrongQueue.indexOf(currentQ.text);
+            if(wIdx > -1) appState[selectedTopic].wrongQueue.splice(wIdx, 1);
+            
+            // Doğru bilinenler listesine ekle (havuzda tekrar çıkmasın)
+            if(!appState[selectedTopic].correctList.includes(currentQ.text)){
+                appState[selectedTopic].correctList.push(currentQ.text);
+            }
         } else {
             selectedLi.classList.add("wrong");
             document.getElementById("feedbackMessage").innerHTML = "<span style='color:var(--danger-color);'>✗ Yanlış</span>";
             
+            // Bu testi tamamlarken yanlış yapılanlara not et
+            wrongQuestionsInThisTest.push(currentQ.text);
+
+            // Doğru şıkkı yeşil yakarak göster
             for (let li of optionsList) {
                 let optText = li.innerText.substring(3).trim();
-                let matchOpt = currentQuestions[currentQuestionIdx].options.find(o => o.text.trim() === optText);
+                let matchOpt = currentQ.options.find(o => o.text.trim() === optText);
                 if (matchOpt && matchOpt.isCorrect) {
                     li.classList.add("correct");
                 }
             }
         }
-
         document.getElementById("btnNext").style.display = "inline-block";
     }
 
@@ -471,11 +512,51 @@
         }
     }
 
+    // SONUÇ VE ADAPTİF SEVİYE YÖNETİMİ
     function showResults() {
         document.getElementById("testArea").style.display = "none";
         document.getElementById("resultArea").style.display = "block";
+        
         let percentage = (score / TEST_LIMIT) * 100;
         document.getElementById("scoreBoard").innerText = `Sonuç: ${score} / ${TEST_LIMIT} Doğru (%${percentage})`;
+
+        const state = appState[selectedTopic];
+        let levelFeedbackText = "";
+
+        // Yanlışları ana hafıza kuyruğuna kaydet (Mükerrer eklemeyi önleyerek)
+        wrongQuestionsInThisTest.forEach(qText => {
+            if(!state.wrongQueue.includes(qText)) {
+                state.wrongQueue.push(qText);
+            }
+            // Yanlış bilindiyse doğru listesinden sil (güvenlik önlemi)
+            let cIdx = state.correctList.indexOf(qText);
+            if(cIdx > -1) state.correctList.splice(cIdx, 1);
+        });
+
+        // Seviye Atlama / Düşme Kontrolü
+        if (percentage >= 70) {
+            if (state.currentLevel < 3) {
+                state.currentLevel++;
+                levelFeedbackText = `<span style='color:var(--success-color); font-weight:bold;'>Tebrikler! %70 başarı barajını aştınız. Zorluk Seviyesi artırıldı! Sonraki test daha zor olacak.</span>`;
+            } else {
+                levelFeedbackText = `<span style='color:var(--success-color); font-weight:bold;'>Harika! En yüksek seviyedesiniz (Zor Seviye) ve başarıyla tamamladınız.</span>`;
+            }
+        } else if (percentage < 40) {
+            if (state.currentLevel > 1) {
+                state.currentLevel--;
+                levelFeedbackText = `<span style='color:var(--danger-color); font-weight:bold;'>Başarı oranı %40'ın altında kaldı. Konuyu pekiştirmeniz için zorluk seviyesi bir kademe düşürüldü.</span>`;
+            } else {
+                levelFeedbackText = `<span style='color:var(--warning-color); font-weight:bold;'>Başarı oranı düşük ancak zaten en kolay seviyedesiniz. Yanlışlarınızı tekrar ederek havuzu eritmeye çalışın.</span>`;
+            }
+        } else {
+            levelFeedbackText = `<span>Dengeli bir başarı gösterdiniz (%40 - %70 arası). Mevcut seviyeniz korundu. Yanlış yaptığınız sorular bir sonraki testte tekrar sorulacaktır.</span>`;
+        }
+
+        document.getElementById("levelFeedback").innerHTML = levelFeedbackText;
+        
+        // Değişiklikleri kalıcı hafızaya işle
+        localStorage.setItem('khk_adaptive_state', JSON.stringify(appState));
+        updateInfoPanel();
     }
 
     function retryTopic() {
