@@ -66,6 +66,7 @@
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-top: 30px;
+            min-height: 100px;
         }
 
         @media (max-width: 600px) {
@@ -235,14 +236,19 @@
         "Web Geliştirme Teknolojileri"
     ];
 
-    // AI API Konfigürasyonu
     const AI_CONFIG = {
         apiUrl: "https://api.openai.com/v1/chat/completions", 
         apiKey: "YOUR_API_KEY_HERE", 
         model: "gpt-4o-mini" 
     };
 
-    let appState = JSON.parse(localStorage.getItem('khk_infinite_adaptive_state')) || {};
+    let appState = {};
+    try {
+        appState = JSON.parse(localStorage.getItem('khk_infinite_adaptive_state')) || {};
+    } catch(e) {
+        appState = {};
+    }
+
     let selectedTopic = "";
     let currentQuestions = [];
     let currentQuestionIdx = 0;
@@ -253,11 +259,14 @@
 
     function renderTopicList() {
         const listContainer = document.getElementById("topicList");
-        if (!listContainer) return;
+        if (!listContainer) {
+            console.error("Hata: 'topicList' elementi DOM üzerinde bulunamadı!");
+            return;
+        }
         listContainer.innerHTML = "";
         
         topics.forEach(topic => {
-            if (!appState[topic]) {
+            if (!appState[topic] || typeof appState[topic] !== 'object') {
                 appState[topic] = {
                     currentLevel: 1, 
                     wrongQueue: []   
@@ -268,9 +277,9 @@
             card.className = "topic-card";
             
             let lvlBadge = "";
-            if(state.currentLevel === 1) lvlBadge = `<span class="badge badge-easy">Seviye: Kolay (Lvl 1)</span>`;
-            else if(state.currentLevel === 2) lvlBadge = `<span class="badge badge-medium">Seviye: Orta (Lvl 2)</span>`;
+            if(state.currentLevel === 2) lvlBadge = `<span class="badge badge-medium">Seviye: Orta (Lvl 2)</span>`;
             else if(state.currentLevel === 3) lvlBadge = `<span class="badge badge-hard">Seviye: Zor (Lvl 3)</span>`;
+            else lvlBadge = `<span class="badge badge-easy">Seviye: Kolay (Lvl 1)</span>`;
 
             card.innerHTML = `
                 <div class="topic-title">${topic}</div>
@@ -292,13 +301,13 @@
     }
 
     function updateInfoPanel() {
-        const state = appState[selectedTopic];
+        const state = appState[selectedTopic] || { currentLevel: 1, wrongQueue: [] };
         const panel = document.getElementById("topicInfoPanel");
         let levelText = state.currentLevel === 1 ? "Kolay" : state.currentLevel === 2 ? "Orta" : "Zor";
         
         panel.innerHTML = `
             <strong>Mevcut Seviyeniz:</strong> Seviye ${state.currentLevel} (${levelText})<br>
-            <strong>Yanlış Hafızasındaki Soru Sayısı:</strong> ${state.wrongQueue.length}<br>
+            <strong>Yanlış Hafızasındaki Soru Sayısı:</strong> ${state.wrongQueue ? state.wrongQueue.length : 0}<br>
             <small style="color:#7f8c8d;">* Soru üret butonuna bastığınızda, mevcut seviyeniz ve varsa geçmiş hatalarınız AI modeline parametre olarak geçilerek tamamen dinamik bir test hazırlanır.</small>
         `;
     }
@@ -327,7 +336,7 @@
         btnCreate.style.display = "none";
         statusMsg.style.display = "block";
         
-        const state = appState[selectedTopic];
+        const state = appState[selectedTopic] || { currentLevel: 1, wrongQueue: [] };
         let levelText = state.currentLevel === 1 ? "Başlangıç/Kolay" : state.currentLevel === 2 ? "Orta Seviye" : "İleri/Zor Seviye";
 
         statusMsg.innerHTML = `
@@ -352,7 +361,7 @@
 
         const userPrompt = `Konu Başlığı: "${selectedTopic}"
         Hedef Zorluk Seviyesi: "${levelText}"
-        Kullanıcının Geçmişte Yanlış Yaptığı Bazı Soru Örnekleri/Temaları: ${JSON.stringify(state.wrongQueue.slice(-3))}
+        Kullanıcının Geçmişte Yanlış Yaptığı Bazı Soru Örnekleri/Temaları: ${JSON.stringify((state.wrongQueue || []).slice(-3))}
         
         Lütfen kurallara uyarak tam olarak ${TEST_LIMIT} adet kaliteli soru içeren JSON array dökümanını oluştur.`;
 
@@ -476,8 +485,10 @@
             document.getElementById("scoreTracker").innerText = `Doğru: ${score}`;
             
             let state = appState[selectedTopic];
-            let foundIdx = state.wrongQueue.findIndex(item => item.q === currentQ.text);
-            if(foundIdx > -1) state.wrongQueue.splice(foundIdx, 1);
+            if(state && state.wrongQueue) {
+                let foundIdx = state.wrongQueue.findIndex(item => item.q === currentQ.text);
+                if(foundIdx > -1) state.wrongQueue.splice(foundIdx, 1);
+            }
 
         } else {
             selectedLi.classList.add("wrong");
@@ -512,9 +523,10 @@
         let percentage = (score / TEST_LIMIT) * 100;
         document.getElementById("scoreBoard").innerText = `Başarı Oranı: %${percentage} (${score} / ${TEST_LIMIT} Doğru)`;
 
-        const state = appState[selectedTopic];
+        const state = appState[selectedTopic] || { currentLevel: 1, wrongQueue: [] };
         let levelFeedbackText = "";
 
+        if(!state.wrongQueue) state.wrongQueue = [];
         wrongQuestionsInThisTest.forEach(wQ => {
             if(!state.wrongQueue.some(q => q.q === wQ.q)) {
                 state.wrongQueue.push(wQ);
@@ -530,3 +542,83 @@
             }
         } else if (percentage < 40) {
             if (state.currentLevel > 1) {
+                state.currentLevel--;
+                levelFeedbackText = `<span style='color:var(--danger-color); font-weight:bold;'>Başarı oranınız %40 altında kaldı. Konuyu pekiştirmeniz için seviyeniz bir kademe düşürüldü.</span>`;
+            } else {
+                levelFeedbackText = `<span style='color:var(--warning-color); font-weight:bold;'>Başarı oranınız düşük fakat zaten temel seviyedesiniz. Hatalı çözümleriniz hafızaya alındı.</span>`;
+            }
+        } else {
+            levelFeedbackText = `<span>Dengeli başarı sağlandı. Mevcut zorluk seviyeniz korundu. Yanlış yaptığınız konular bir sonraki test kurgusuna dahil edilecek.</span>`;
+        }
+
+        document.getElementById("levelFeedback").innerHTML = levelFeedbackText;
+        localStorage.setItem('khk_infinite_adaptive_state', JSON.stringify(appState));
+        updateInfoPanel();
+    }
+
+    function retryTopic() {
+        resetQuizInterface();
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function generateFallbackQuestions(topic, level) {
+        const mockDataPool = {
+            "Donanım ve Sayı Sistemleri": [
+                { q: "İşlemcinin (CPU) içerisindeki en hızlı hafıza birimi ve katmanı aşağıdakilerden hangisidir?", a: "Register (Yazmaçlar) ve L1 Önbellek", b: "Sanal Bellek (Swap)", c: "DRAM Hücreleri", d: "NVMe Kontrolcüsü", e: "Güney Köprüsü Sram Bloğu" },
+                { q: "ECC bellek teknolojisinin standart RAM modüllerinden temel farkı nedir?", a: "Veri hatalarını algılayıp tek bitlik hataları otomatik düzeltebilmesi", b: "XMP profilleriyle iki kat frekansa çıkması", c: "Anakart slotuna ters takılabilen pin mimarisi", d: "Sadece sıvı soğutmalı sistemlerde çalışabilmesi", e: "Depolama diskini tamamen devre dışı bırakması" },
+                { q: "Onaltılık (Hexadecimal) sayı sistemindeki '1A' ifadesinin onluk (Decimal) sistemdeki karşılığı nedir?", a: "26", b: "16", c: "32", d: "10", e: "42" }
+            ],
+            "Algoritma ve Programlama": [
+                { q: "Aşağıdaki veri yapılarından hangisi 'Son Giren İlk Çıkar' (LIFO) prensibine göre çalışır?", a: "Yığıt (Stack)", b: "Kuyruk (Queue)", c: "Bağlı Liste (Linked List)", d: "Sözlük (Dictionary)", e: "İkili Arama Ağacı" },
+                { q: "Zaman karmaşıklığı analizinde en kötü durum senaryosu O(1) olan işlem hangisidir?", a: "Boyutu bilinen bir dizinin indeksine doğrudan erişmek", b: "Sıralanmamış bir dizide doğrusal arama yapmak", c: "Matris çarpanlarını rekürsif toplamak", d: "Graf yapısında en kısa yolu hesaplamak", e: "Metin içindeki tüm kelimeleri alfabetik sıralamak" },
+                { q: "Nesne Yönelimli Programlamada (OOP) alt sınıfların üst sınıf özelliklerini devralmasına ne ad verilir?", a: "Kalıtım (Inheritance)", b: "Kapsülleme (Encapsulation)", c: "Çok Biçimlilik (Polymorphism)", d: "Soyutlama (Abstraction)", e: "Arayüz (Interface)" }
+            ],
+            "Ağlar ve Siber Güvenlik": [
+                { q: "OSI referans modelinde yönlendirme (Routing) ve IP paket kontrolü hangi katmanda gerçekleştirilir?", a: "Ağ Katmanı (Network Layer)", b: "Taşıma Katmanı (Transport Layer)", c: "Fiziksel Katman (Physical Layer)", d: "Uygulama Katmanı (Application Layer)", e: "Veri Bağı Katmanı (Data Link)" },
+                { q: "Üçlü el sıkışma (3-way handshake) protokolü hangi ağ protokolünün güvenli bağlantı kurmasında zorunludur?", a: "TCP", b: "UDP", c: "ICMP", d: "DNS", e: "DHCP" },
+                { q: "Kullanıcıları sahte web sitlerine yönlendirerek şifre çalmayı hedefleyen siber saldırı türü hangisidir?", a: "Oltalama (Phishing)", b: "DDoS", c: "SQL Injection", d: "Man-in-the-Middle", e: "Ransomware" }
+            ],
+            "Veritabanı Yönetim Sistemleri": [
+                { q: "ACID ilkelerindeki 'Atomicity' (Bütünlük) kuralı tam olarak neyi garanti eder?", a: "İşlemlerin (Transaction) ya tamamen gerçekleşmesini ya da hata anında tamamen geri alınmasını", b: "Aynı anda binlerce kullanıcının veri yazabilmesini", c: "Veritabanının disk üzerinde şifreli saklanmasını", d: "İndeksleme maliyetlerinin sıfıra indirilmesini", e: "Tablolar arasındaki yabancı anahtar ilişkilerini" },
+                { q: "İlişkisel veritabanlarında veri tekrarını önlemek ve mantıksal tablolar kurmak için yapılan işleme ne ad verilir?", a: "Normalizasyon", b: "İndeksleme", c: "Miras Alma", d: "Loglama", e: "Replika Oluşturma" }
+            ],
+            "Web Geliştirme Teknolojileri": [
+                { q: "Tarayıcıda JavaScript kodlarının asenkron çalışmasını ve sayfa yenilenmeden veri çekilmesini sağlayan mimari nedir?", a: "AJAX / Fetch API", b: "CSS Grid Sistemi", c: "DOM Parser", d: "Session Storage API", e: "Sass Önderleyicisi" },
+                { q: "Bir web sayfasının ilk yüklenme performans kriterlerinden olan FCP teriminin açılımı nedir?", a: "First Contentful Paint", b: "Fast Connection Protocol", c: "Flexbox Control Panel", d: "File Transfer Process", e: "Frontend Core Package" }
+            ]
+        };
+
+        let activePool = mockDataPool[topic] || mockDataPool["Donanım ve Sayı Sistemleri"];
+        let generated = [];
+
+        for (let i = 0; i < TEST_LIMIT; i++) {
+            let base = activePool[i % activePool.length];
+            let lvlPrefix = level === 1 ? "[Kolay]" : level === 2 ? "[Orta]" : "[Zor]";
+            
+            generated.push({
+                q: `${lvlPrefix} (Soru ${i+1}) ${base.q}`,
+                a: base.a,
+                b: base.b + " (Geçersiz varyasyon)",
+                c: base.c || "Yanlış konfigüre edilmiş parametre yapısı",
+                d: base.d || "Sistem sınırları dışında kalan uyumsuz mimari",
+                e: base.e || "Zaman aşımına neden olan optimize edilmemiş süreç"
+            });
+        }
+        return generated;
+    }
+
+    // TETİKLEME GARANTİ MATRIXI: Tarayıcının kaçırma şansını sıfırlıyoruz.
+    renderTopicList(); 
+    document.addEventListener("DOMContentLoaded", renderTopicList);
+    window.onload = renderTopicList;
+</script>
+
+</body>
+</html>
