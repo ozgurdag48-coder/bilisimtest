@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KHK Adaptif Öğrenme Portalı v3 - Sonsuz Varyasyon</title>
+    <title>KHK Adaptif Öğrenme Portalı v3 - AI Powered</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -181,28 +181,24 @@
 
 <div class="container">
     
-    <!-- ANA SAYFA -->
     <div id="homePage" class="page active">
         <h1>KHK Bilişim Sınav Portalı</h1>
-        <p style="text-align:center; color:#7f8c8d; margin-bottom: 25px;">Sonsuz Varyasyonlu Canlı Web Arama ve Adaptif Test Motoru</p>
+        <p style="text-align:center; color:#7f8c8d; margin-bottom: 25px;">Yapay Zeka API Destekli Adaptif Test Motoru</p>
         <div class="topic-list" id="topicList"></div>
     </div>
 
-    <!-- TEST ALANI -->
     <div id="quizPage" class="page">
         <button class="btn btn-nav" onclick="goHome()">← Konu Listesine Dön</button>
         <h2 id="currentTopicTitle">Konu Başlığı</h2>
         
         <div class="info-panel" id="topicInfoPanel"></div>
         
-        <!-- Giriş / Arama ve Kurulum Alanı -->
         <div id="setupArea" style="text-align: center; margin: 30px 0;">
-            <button class="btn" id="btnCreateTest" onclick="generateDynamicTest()">Google Canlı Aramasıyla Test Üret</button>
+            <button class="btn" id="btnCreateTest" onclick="generateDynamicTest()">Yapay Zeka API ile Soruları Üret</button>
             <div id="statusMessage" class="status-msg" style="display: none;"></div>
             <button class="btn btn-success" id="btnStartTest" style="display: none;" onclick="startTest()">Teste Başla</button>
         </div>
 
-        <!-- Soru Alanı -->
         <div id="testArea" style="display: none;">
             <div style="font-weight: bold; color: #7f8c8d; display: flex; justify-content: space-between;" id="metaTracker">
                 <span id="questionTracker">Soru: 1/10</span>
@@ -218,13 +214,12 @@
             </div>
         </div>
 
-        <!-- Sonuç Alanı -->
         <div id="resultArea" style="display: none;">
             <h2>Test Sonucu</h2>
             <div style="text-align: center; font-size: 22px; font-weight: bold; margin: 25px 0;" id="scoreBoard"></div>
             <div style="text-align: center; font-size: 16px; margin-bottom: 25px; line-height: 1.6;" id="levelFeedback"></div>
             <div style="text-align: center;">
-                <button class="btn" onclick="retryTopic()">Yeni Arama ve Farklı Test</button>
+                <button class="btn" onclick="retryTopic()">Yeni Yapay Zeka Testi Üret</button>
             </div>
         </div>
     </div>
@@ -241,65 +236,12 @@
         "Web Geliştirme Teknolojileri"
     ];
 
-    // SONSUZ SORU VARYASYONU İÇİN DİL VE PARAMETRE MATRİSİ (Rastgele Kombinasyon Motoru)
-    const engineMatrix = {
-        "Donanım ve Sayı Sistemleri": {
-            subjects: ["RAM Bellek", "İşlemci (CPU)", "SSD Mimarıleri", "Önbellek Katmanları (Cache)", "Anakart Çipsetleri (Chipset)", "İkili Sayı Sistemleri", "Onaltılık Kodlar", "BIOS/UEFI Sistemleri"],
-            easy: {
-                patterns: ["temel görevi aşağıdakilerden hangisidir?", "çalışma mantığı öncelikle neye dayanır?", "bilgisayar sistemindeki yeri en net nasıl tanımlanır?"],
-                wrongPool: ["Verileri kalıcı olarak diskte saklamak", "Ekrandaki pikselleri boyamak", "Sisteme sadece elektrik gücü sağlamak", "Klavye girişlerini doğrudan engellemek", "İnternet hızını iki katına çıkarmak", "Yazıcı çıktılarını sıraya dizmek"]
-            },
-            medium: {
-                patterns: ["yapılandırmasında ortaya çıkan darboğazların temel sebebi nedir?", "entegrasyonu esnasında hangi mimari protokol aktif rol oynar?", "performansını doğrudan etkileyen parametre hangisidir?"],
-                wrongPool: ["Veri yollarındaki (Bus) frekans uyuşmazlığı", "SATA veri kablosunun rengi", "Kullanılan işletim sisteminin arayüz teması", "Güney köprüsünün aşırı soğuk çalışması", "Monitörün yenilenme hızı (Hz)", "Klavye düzeninin Q veya F olması"]
-            },
-            hard: {
-                patterns: ["mimarilerinde karşılaşılan sinyal gecikmeleri (latency) ve komut boru hattı (pipelining) kilitlenmelerinin ana nedeni hangisidir?", "senkronizasyon süreçlerinde donanımsal kesme (IRQ) yönetimini zorlayan faktör nedir?", "üzerindeki kayıtçıların (registers) doğrudan bellek adresleme sınırını belirleyen temel unsur nedir?"],
-                wrongPool: ["Dallanma tahmini (Branch Prediction) hataları ve önbellek kaçırma (Cache Miss) durumları", "Yazılım tabanlı işletim sistemi arayüz kütüphanelerinin uyumsuzluğu", "BIOS pilinin zaman ölçekleme voltajındaki mikro dalgalanmalar", "Statik IP dağıtımındaki DHCP el sıkışma sürelerinin uzaması", "Kullanıcı haklarının kısıtlanmış olması"]
-            }
-        },
-        "Algoritma ve Programlama": {
-            subjects: ["Döngü Yapıları (Loops)", "Rekürsif Fonksiyonlar", "Nesne Yönelimli Programlama (OOP)", "Kalıtım ve Polimorfizm", "Zaman Karmaşıklığı (Big O)", "Yığıt ve Kuyruk (Stack/Queue)", "Dizi ve Listeler"],
-            easy: {
-                patterns: ["tanımı en doğru şekilde aşağıdakilerden hangisinde yapılmıştır?", "kullanılmasının temel amacı nedir?", "programlamaya yeni başlayanlar için neyi ifade eder?"],
-                wrongPool: ["Kodun belirli şartlar altında tekrar tekrar çalıştırılmasını sağlamak", "Bilgisayarı tamamen kapatmak", "Sadece grafik arayüz tasarlamak", "Veritabanına uzaktan şifresiz bağlanmak", "Yazılan kodları otomatik olarak internette satmak"]
-            },
-            medium: {
-                patterns: ["yazılırken bellek yönetiminde (Memory Management) dikkat edilmesi gereken en kritik husus nedir?", "yapısının performans analizi yapılırken hangi matematiksel model temel alınır?", "bloğunda oluşan mantıksal hataların (Logic Errors) tespitinde hangi yöntem izlenir?"],
-                wrongPool: ["Değişken kapsamı (Scope) ve işaretçi (Pointer) sızıntılarının önlenmesi", "Yorum satırlarının kod hacmini büyütmesi", "Fonksiyon adlarının alfabetik sırada yazılmaması", "Sadece çift sayılardan oluşan veri kümelerinin seçilmesi"]
-            },
-            hard: {
-                patterns: ["çalışma zamanı analizinde (Runtime) en kötü durum senaryosu 'O(n log n)' olan ve kararlı (stable) çalışan model hangisidir?", "tasarım desenlerinde (Design Patterns) bağımlılıkların tersine çevrilmesi (Dependency Inversion) ilkesinin temel kurgusu nedir?", "mimarilerinde 'Race Condition' (Yarış Durumu) riskini tamamen sıfırlamak için hangi eşzamanlılık (Concurrency) kilidi uygulanır?"],
-                wrongPool: ["Mutex/Semaphore mekanizmaları ile kritik bölge (Critical Section) izolasyonu", "Basit bir 'if-else' kontrolü ile tüm iş parçacıklarının sonlandırılması", "Döngü sayacının her adımda ikişer ikişer artırılması yöntemi", "Global değişkenlerin kodun her yerinde serbestçe manipüle edilmesi"]
-            }
-        },
-        "Ağlar ve Siber Güvenlik": {
-            subjects: ["OSI Referans Modeli", "TCP/IP Protokolü", "DNS Çözümlemesi", "NAT Teknolojisi", "DDoS Saldırıları", "Oltalama (Phishing)", "Güvenlik Duvarı (Firewall)", "MAC Adresleme"],
-            easy: {
-                patterns: ["temel işlevi aşağıdakilerden hangisidir?", "ne amaçla geliştirilmiştir?", "günlük internet kullanımında neyi sağlar?"],
-                wrongPool: ["Cihazların ağ üzerinde birbiriyle kurallara uygun haberleşmesini sağlamak", "Bilgisayar ekran parlaklığını otomatik ayarlamak", "Silinen dosyaları geri getirmek", "Word dökümanlarını PDF formatına çevirmek"]
-            },
-            medium: {
-                patterns: ["katmanında paketlerin yönlendirilmesi (Routing) sürecinde hangi parametre birincil önceliğe sahiptir?", "yapılandırmasında alt ağ maskesinin (Subnet Mask) değiştirilmesi ağı nasıl etkiler?", "protokolünde üçlü el sıkışma (3-way handshake) neden zorunludur?"],
-                wrongPool: ["Bağlantının güvenilir ve sıralı bir veri akışı sağladığından emin olmak için", "Ağ kablosunun uzunluğunu ölçmek için", "Modemin elektrik harcamasını düşürmek için", "Kullanıcının tarayıcı geçmişini temizlemek için"]
-            },
-            hard: {
-                patterns: ["mimarisine yönelik gerçekleştirilen 'Man-in-the-Middle' (Ortadaki Adam) saldırılarında ARP zehirlemesi (ARP Spoofing) hangi zafiyeti suistimal eder?", "üzerindeki şifreli trafik analizlerinde (TLS Handshake) kusursuz iletim gizliliğini (Perfect Forward Secrecy) sağlayan anahtar değişim algoritması hangisidir?", "katmanındaki parçalanmış paket (Fragmentation) saldırılarını engellemek için güvenlik duvarında hangi stateful denetim yapılmalıdır?"],
-                wrongPool: ["Ephemerial Diffie-Hellman (DHE) anahtar değişimi ve asimetrik kriptografi kontrolü", "Simetrik şifreleme algoritmasındaki bit derinliğinin statik olarak artırılması", "Kullanıcı bilgisayarına daha yüksek kapasiteli bir ağ kartı takılması", "Tüm ağ trafiğinin sadece gündüz saatlerinde sınırlandırılması"]
-            }
-        },
-        "Veritabanı Yönetim Sistemleri": {
-            subjects: ["SQL Sorguları", "İlişkisel Veritabanları (RDBMS)", "İndeksleme (Indexing)", "Normalizasyon Kriterleri", "ACID Prensipleri", "NoSQL Mimarileri"],
-            easy: { patterns: ["ne işe yarar?", "temel mantığı nedir?"], wrongPool: ["Verileri düzenli saklamak", "Resim düzenlemek", "Oyun oynamak"] },
-            medium: { patterns: ["sorgu performansını nasıl etkiler?", "kullanılırken nelere dikkat edilmelidir?"], wrongPool: ["B-Tree yapısıyla arama maliyetini düşürür", "Veritabanı boyutunu fiziksel olarak küçültür", "Yalnızca sayısal verileri indeksler"] },
-            hard: { patterns: ["ACID ilkelerindeki 'Isolation' (Yalıtım) seviyeleri dikkate alındığında 'Phantom Read' sorununu tamamen çözen seviye hangisidir?"], wrongPool: ["Serializable seviyesi", "Read Committed seviyesi", "Read Uncommitted seviyesi"] }
-        },
-        "Web Geliştirme Teknolojileri": {
-            subjects: ["DOM Manipülasyonu", "HTTP İstekleri (GET/POST)", "REST API Mimarisi", "Asenkron JavaScript (Async/Await)", "CSS Flexbox/Grid", "Tarayıcı Önbelleği (Cookies/Session)"],
-            easy: { patterns: ["web sayfalarında ne amaçla kullanılır?", "ne anlama gelir?"], wrongPool: ["Sayfayı dinamik ve etkileşimli hale getirmek", "Bilgisayara format atmak", "İnternet faturasını ödemek"] },
-            medium: { patterns: ["kullanımında asenkron (Asynchronous) yapının tercih edilme sebebi nedir?", "güvenlik katmanında CORS hatası alınmasının temel nedeni nedir?"], wrongPool: ["Kullanıcı arayüzünün (UI) kilitlenmesini önlemek ve arka planda veri çekmek", "Tarayıcının internete bağlı olmaması", "Yazılan CSS kodlarının eski olması"] },
-            hard: { patterns: ["Single Page Application (SPA) mimarilerinde 'Client-Side Rendering' ile 'Server-Side Rendering' arasındaki ilk yükleme (FCP) performans farkını belirleyen ana faktör nedir?"], wrongPool: ["Sunucuda önceden derlenmiş HTML dökümanının doğrudan tarayıcıya iletilmesi", "JavaScript dosyalarının adlarının şifrelenmiş olması", "Kullanıcının ekran çözünürlüğünün düşük olması"] }
-        }
+    // AI API Konfigürasyonu
+    // Kendi API uç noktanızı ve anahtarınızı buraya entegre edebilirsiniz.
+    const AI_CONFIG = {
+        apiUrl: "[https://api.openai.com/v1/chat/completions](https://api.openai.com/v1/chat/completions)", // Veya kendi backend/proxy URL'niz
+        apiKey: "YOUR_API_KEY_HERE", // Güvenlik için prod ortamında proxy kullanılması önerilir
+        model: "gpt-4o-mini" 
     };
 
     // LocalStorage Durum Yönetimi
@@ -324,8 +266,8 @@
         topics.forEach(topic => {
             if (!appState[topic]) {
                 appState[topic] = {
-                    currentLevel: 1, // 1, 2, 3
-                    wrongQueue: []   // Yanlış yapılan nesnelerin listesi {q, a, b, c, d, e}
+                    currentLevel: 1, // 1: Kolay, 2: Orta, 3: Zor
+                    wrongQueue: []   // Yanlış yapılan eski soruların havuzu
                 };
             }
 
@@ -366,7 +308,7 @@
         panel.innerHTML = `
             <strong>Mevcut Seviyeniz:</strong> Seviye ${state.currentLevel} (${levelText})<br>
             <strong>Yanlış Hafızasındaki Soru Sayısı:</strong> ${state.wrongQueue.length}<br>
-            <small style="color:#7f8c8d;">* Her arama butonuna bastığınızda, Google verilerine dayalı kelime matrisi kullanılarak <u>tamamen farklı</u> sorular sıfırdan kombinasyonlanır.</small>
+            <small style="color:#7f8c8d;">* Soru üret butonuna bastığınızda, mevcut seviyeniz ve varsa geçmiş hatalarınız AI modeline parametre olarak geçilerek tamamen dinamik bir test hazırlanır.</small>
         `;
     }
 
@@ -386,8 +328,8 @@
         wrongQuestionsInThisTest = [];
     }
 
-    // ARKA PLANDA ÇALIŞAN ASENKRON GERÇEKÇİ GOOGLE ARAMA VE VARYASYON MOTORU
-    function generateDynamicTest() {
+    // AI API ARACILIĞIYLA DİNAMİK SORU ÜRETME MOTORU
+    async function generateDynamicTest() {
         const btnCreate = document.getElementById("btnCreateTest");
         const statusMsg = document.getElementById("statusMessage");
         const btnStart = document.getElementById("btnStartTest");
@@ -396,79 +338,103 @@
         statusMsg.style.display = "block";
         
         const state = appState[selectedTopic];
-        const lvl = state.currentLevel;
-        let lvlText = lvl === 1 ? "easy" : lvl === 2 ? "medium" : "advanced";
+        let levelText = state.currentLevel === 1 ? "Başlangıç/Kolay" : state.currentLevel === 2 ? "Orta Seviye" : "İleri/Zor Seviye";
 
         statusMsg.innerHTML = `
-            <div>Google veritabanında derin konu taraması yapılıyor...</div>
-            <div class="search-log">Sorgu: "google_search?q=${encodeURIComponent(selectedTopic)}+level_${lvlText}+academic_exams&format=json"</div>
+            <div>Yapay Zeka API ile bağlantı kuruluyor...</div>
+            <div class="search-log">POST -> ${AI_CONFIG.apiUrl} <br>Konu: ${selectedTopic} | Seviye: ${levelText}</div>
         `;
 
-        setTimeout(() => {
-            statusMsg.innerHTML = "Arama sonuçları başarıyla çekildi ve benzersiz 10 soru kombinasyonu oluşturuldu!";
-            btnStart.style.display = "inline-block";
+        // Yapay zekaya gönderilecek sistem yönergesi ve kurgusu
+        const systemPrompt = `Sen bir akademik bilişim sınavı soru üretme motorusun. Görevin, sana verilen konu ve zorluk seviyesine uygun, tamamen benzersiz ve teknik doğruluğu yüksek 5 şıklı (A, B, C, D, E) tam olarak ${TEST_LIMIT} adet soru üretmektir.
+        Cevabını SADECE ve SADECE aşağıda belirtilen geçerli JSON array formatında döndürmelisin. Markdown etiketleri (\`\`\`json vb.), ekstra açıklama, giriş veya sonuç yazısı ASLA içermemelidir.
+        
+        JSON Format Şeması:
+        [
+          {
+            "q": "Soru metni buraya",
+            "a": "Doğru şık metni",
+            "b": "Yanlış çeldirici 1",
+            "c": "Yanlış çeldirici 2",
+            "d": "Yanlış çeldirici 3",
+            "e": "Yanlış çeldirici 4"
+          }
+        ]`;
 
-            let generatedList = [];
-            const matrix = engineMatrix[selectedTopic];
-            const lvlConfig = lvl === 1 ? matrix.easy : lvl === 2 ? matrix.medium : matrix.hard;
+        const userPrompt = `Konu Başlığı: "${selectedTopic}"
+        Hedef Zorluk Seviyesi: "${levelText}"
+        Kullanıcının Geçmişte Yanlış Yaptığı Bazı Soru Örnekleri/Temaları (Eğer boş değilse bu temaları da pekiştirmek için kullan): ${JSON.stringify(state.wrongQueue.slice(-3))}
+        
+        Lütfen kurallara uyarak tam olarak ${TEST_LIMIT} adet kaliteli soru içeren JSON array dökümanını oluştur.`;
 
-            // 1. ÖNCE HAFIZADAKİ YANLIŞ SORULARI KONTROL ET VE ENJEKTE ET
-            let activeWrongPool = [...state.wrongQueue];
-            shuffleArray(activeWrongPool);
-            
-            while(activeWrongPool.length > 0 && generatedList.length < 3) { // Testin en fazla 3'ü eski yanlışlardan gelsin ki sıkmasın
-                let oldWrong = activeWrongPool.pop();
-                generatedList.push(oldWrong);
+        try {
+            // Eğer geçerli bir API Key girilmediyse test amaçlı doğrudan Fallback (Simülatör) çalıştır
+            if (AI_CONFIG.apiKey === "YOUR_API_KEY_HERE" || !AI_CONFIG.apiKey) {
+                throw new Error("API_KEY_NOT_SET");
             }
 
-            // 2. KALAN BOŞLUKLARI SONSUZ VARYASYON MOTORUNDAN RASTGELE ÜRETEREK DOLDUR
-            let loopCounter = 0;
-            while(generatedList.length < TEST_LIMIT && loopCounter < 100) {
-                loopCounter++;
-                // Rastgele konu, rastgele soru kalıbı ve rastgele şık kombinasyonu seç
-                let subject = matrix.subjects[Math.floor(Math.random() * matrix.subjects.length)];
-                let pattern = lvlConfig.patterns[Math.floor(Math.random() * lvlConfig.patterns.length)];
-                
-                let questionText = `[Google Canlı Sonucu] ${subject} yapısı hakkında internet kaynaklarında yer alan bilgilere göre; ${subject} ${pattern}`;
-
-                // Mükerrer soru oluştuysa es geç
-                if(generatedList.some(item => item.q === questionText)) continue;
-
-                // Yanlış şıklardan rastgele 4 tane seç
-                let poolCopy = [...lvlConfig.wrongPool];
-                shuffleArray(poolCopy);
-                let chosenWrongs = poolCopy.slice(0, 4);
-
-                // Doğru şıkkı üret
-                let correctAns = `Doğru Yapılandırılmış Standart ${subject} Teknik Çözümü`;
-                if(lvl === 3) correctAns = `Mühendislik Standartlarına Uygun Optimize ${subject} Mimari Çözümü`;
-
-                generatedList.push({
-                    q: questionText,
-                    a: correctAns,
-                    b: chosenWrongs[0] || "Diğer Geçersiz Yapı",
-                    c: chosenWrongs[1] || "Hatalı Protokol Kurgusu",
-                    d: chosenWrongs[2] || "Sistem Sınırları Dışında",
-                    e: chosenWrongs[3] || "Yetersiz Veri Tanımı"
-                });
-            }
-
-            // Nihai Listeyi Arayüz Nesnesine Dönüştür
-            currentQuestions = generatedList.map(item => {
-                let options = [
-                    { text: item.a, isCorrect: true },
-                    { text: item.b, isCorrect: false },
-                    { text: item.c, isCorrect: false },
-                    { text: item.d, isCorrect: false },
-                    { text: item.e, isCorrect: false }
-                ];
-                return {
-                    text: item.q,
-                    options: shuffleArray(options)
-                };
+            const response = await fetch(AI_CONFIG.apiUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${AI_CONFIG.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: AI_CONFIG.model,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    temperature: 0.7
+                })
             });
 
-        }, 1200);
+            if (!response.ok) {
+                throw new Error(`API_ERROR: ${response.status}`);
+            }
+
+            const data = await response.json();
+            let aiResponseText = data.choices[0].message.content.trim();
+            
+            // Olası markdown bloklarını temizle
+            if(aiResponseText.startsWith("```json")) aiResponseText = aiResponseText.replace("```json", "");
+            if(aiResponseText.endsWith("```")) aiResponseText = aiResponseText.substring(0, aiResponseText.length - 3);
+            aiResponseText = aiResponseText.trim();
+
+            const parsedQuestions = JSON.parse(aiResponseText);
+            processGeneratedQuestions(parsedQuestions);
+
+            statusMsg.innerHTML = "🎯 Yapay zeka soruları başarıyla üretti! Test hazır.";
+            btnStart.style.display = "inline-block";
+
+        } catch (error) {
+            console.warn("AI API Hatası veya API Anahtarı Eksik. Local Fallback Motoru Devreye Alınıyor...", error);
+            statusMsg.innerHTML = "⚠️ Canlı API bağlantısı simüle ediliyor (Lokal Test Modu Aktif)...";
+            
+            setTimeout(() => {
+                const fallbackData = generateFallbackQuestions(selectedTopic, state.currentLevel);
+                processGeneratedQuestions(fallbackData);
+                statusMsg.innerHTML = "🎯 Yapay Zeka (Simüle) soruları başarıyla üretti! Test hazır.";
+                btnStart.style.display = "inline-block";
+            }, 1000);
+        }
+    }
+
+    // Gelen ham veriyi arayüz için şıkları karıştırarak hazır hale getiren fonksiyon
+    function processGeneratedQuestions(questionsArray) {
+        currentQuestions = questionsArray.map(item => {
+            let options = [
+                { text: item.a, isCorrect: true },
+                { text: item.b, isCorrect: false },
+                { text: item.c, isCorrect: false },
+                { text: item.d, isCorrect: false },
+                { text: item.e, isCorrect: false }
+            ];
+            return {
+                text: item.q,
+                options: shuffleArray(options)
+            };
+        });
     }
 
     function startTest() {
@@ -524,7 +490,7 @@
             score++;
             document.getElementById("scoreTracker").innerText = `Doğru: ${score}`;
             
-            // Doğru bildiyse, bu soruyu eski yanlışlar hafızasından kalıcı olarak siler
+            // Doğru bildiyse, bu soruyu eski yanlışlar hafızasından kalıcı olarak temizle
             let state = appState[selectedTopic];
             let foundIdx = state.wrongQueue.findIndex(item => item.q === currentQ.text);
             if(foundIdx > -1) state.wrongQueue.splice(foundIdx, 1);
@@ -533,7 +499,7 @@
             selectedLi.classList.add("wrong");
             document.getElementById("feedbackMessage").innerHTML = "<span style='color:var(--danger-color);'>✗ Yanlış</span>";
             
-            // Bir sonraki testte öncelikli çıksın diye yanlış havuzuna ekle
+            // Gelecek testlerde öncelikli hatırlatılması için yanlış havuzuna ekle
             wrongQuestionsInThisTest.push(rawQuestionObj);
 
             for (let li of optionsList) {
@@ -566,30 +532,30 @@
         const state = appState[selectedTopic];
         let levelFeedbackText = "";
 
-        // Yanlışları ana hafızaya kaydet
+        // Yanlışları ana persist hafızaya kaydet
         wrongQuestionsInThisTest.forEach(wQ => {
             if(!state.wrongQueue.some(q => q.q === wQ.q)) {
                 state.wrongQueue.push(wQ);
             }
         });
 
-        // ADAPTİF SEVİYE SİSTEMİ (%70 Barajı)
+        // ADAPTİF SEVİYE HESAPLAMA (%70 Geçme Barajı)
         if (percentage >= 70) {
             if (state.currentLevel < 3) {
                 state.currentLevel++;
-                levelFeedbackText = `<span style='color:var(--success-color); font-weight:bold;'>Harika! Başarı oranınız %70 üstünde. Bir üst zorluk seviyesine geçtiniz!</span>`;
+                levelFeedbackText = `<span style='color:var(--success-color); font-weight:bold;'>Tebrikler! Başarı oranınız %70 üzerinde. Bir üst uzmanlık seviyesine yükseldiniz!</span>`;
             } else {
-                levelFeedbackText = `<span style='color:var(--success-color); font-weight:bold;'>Kusursuz! En yüksek uzmanlık seviyesini (Seviye 3) başarıyla tamamladınız.</span>`;
+                levelFeedbackText = `<span style='color:var(--success-color); font-weight:bold;'>Harika! En yüksek seviye olan Seviye 3 (Zor) aşamasını başarıyla tamamladınız.</span>`;
             }
         } else if (percentage < 40) {
             if (state.currentLevel > 1) {
                 state.currentLevel--;
-                levelFeedbackText = `<span style='color:var(--danger-color); font-weight:bold;'>Başarı oranınız %40'ın altında kaldı. Konuyu pekiştirmeniz adına seviyeniz bir kademe düşürüldü.</span>`;
+                levelFeedbackText = `<span style='color:var(--danger-color); font-weight:bold;'>Başarı oranınız %40 altında kaldı. Konuyu pekiştirmeniz için seviyeniz bir kademe düşürüldü.</span>`;
             } else {
-                levelFeedbackText = `<span style='color:var(--warning-color); font-weight:bold;'>Başarı oranınız düşük ancak zaten temel seviyedesiniz. Yanlış sorularınız hafızaya alındı.</span>`;
+                levelFeedbackText = `<span style='color:var(--warning-color); font-weight:bold;'>Başarı oranınız düşük fakat zaten temel seviyedesiniz. Hatalı çözümleriniz hafızaya alındı.</span>`;
             }
         } else {
-            levelFeedbackText = `<span>Dengeli başarı sağlandı. Mevcut seviyeniz korundu. Yanlış yaptığınız sorular sonraki testte öncelikli gelecektir.</span>`;
+            levelFeedbackText = `<span>Dengeli başarı sağlandı. Mevcut zorluk seviyeniz korundu. Yanlış yaptığınız konular bir sonraki test kurgusuna dahil edilecek.</span>`;
         }
 
         document.getElementById("levelFeedback").innerHTML = levelFeedbackText;
@@ -608,6 +574,24 @@
             [array[i], array[j]] = [array[j], array[i]];
         }
         return array;
+    }
+
+    // FRONTEND TESTİ İÇİN GEÇİCİ LOCAL AI SİMÜLATÖRÜ (FALLBACK MOTORU)
+    function generateFallbackQuestions(topic, level) {
+        let samplePool = [];
+        let lvlTag = level === 1 ? "[Seviye 1 - Kolay AI]" : level === 2 ? "[Seviye 2 - Orta AI]" : "[Seviye 3 - İleri AI]";
+        
+        for(let i=1; i<=TEST_LIMIT; i++) {
+            samplePool.push({
+                q: `${lvlTag} Yapay zeka tarafından üretilen ${topic} ile ilgili ${i}. dinamik senaryo sorusu soruluyor?`,
+                a: `AI tarafından doğrulanmış en optimize teknik çözüm şıkkı (Doğru Cevap)`,
+                b: `Gereksiz sistem yükü oluşturan hatalı mimari yaklaşım`,
+                c: `Eski sürüm protokol veya uyumsuz kütüphane entegrasyonu`,
+                d: `Güvenlik zafiyetine ve mantıksal veri sızıntılarına yol açan kurgu`,
+                e: `Süreç zaman aşımı (Timeout) hatasına sebep olan senkronizasyon yapısı`
+            });
+        }
+        return samplePool;
     }
 </script>
 
