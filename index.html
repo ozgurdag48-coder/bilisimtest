@@ -251,12 +251,9 @@
     let wrongQuestionsInThisTest = [];
     const TEST_LIMIT = 10;
 
-    document.addEventListener("DOMContentLoaded", () => {
-        renderTopicList();
-    });
-
     function renderTopicList() {
         const listContainer = document.getElementById("topicList");
+        if (!listContainer) return;
         listContainer.innerHTML = "";
         
         topics.forEach(topic => {
@@ -322,7 +319,6 @@
         wrongQuestionsInThisTest = [];
     }
 
-    // AI API ARACILIĞIYLA DİNAMİK SORU ÜRETME MOTORU
     async function generateDynamicTest() {
         const btnCreate = document.getElementById("btnCreateTest");
         const statusMsg = document.getElementById("statusMessage");
@@ -411,7 +407,6 @@
 
     function processGeneratedQuestions(questionsArray) {
         currentQuestions = questionsArray.map(item => {
-            // Şıkların orijinal hallerini ve doğruluk durumlarını tutan temiz yapı
             let options = [
                 { text: item.a, isCorrect: true, id: "correct_ans" },
                 { text: item.b, isCorrect: false, id: "w1" },
@@ -422,7 +417,7 @@
             return {
                 text: item.q,
                 options: shuffleArray(options),
-                original: item // Referans kontrolü için orijinal nesneyi sakla
+                original: item 
             };
         });
     }
@@ -490,7 +485,6 @@
             
             wrongQuestionsInThisTest.push(rawQuestionObj);
 
-            // Doğru şıkkı arayüzde yeşil renkle yakala
             for (let li of optionsList) {
                 let optText = li.innerText.substring(3).trim();
                 let matchOpt = currentQ.options.find(o => o.text.trim() === optText);
@@ -536,66 +530,3 @@
             }
         } else if (percentage < 40) {
             if (state.currentLevel > 1) {
-                state.currentLevel--;
-                levelFeedbackText = `<span style='color:var(--danger-color); font-weight:bold;'>Başarı oranınız %40 altında kaldı. Konuyu pekiştirmeniz için seviyeniz bir kademe düşürüldü.</span>`;
-            } else {
-                levelFeedbackText = `<span style='color:var(--warning-color); font-weight:bold;'>Başarı oranınız düşük fakat zaten temel seviyedesiniz. Hatalı çözümleriniz hafızaya alındı.</span>`;
-            }
-        } else {
-            levelFeedbackText = `<span>Dengeli başarı sağlandı. Mevcut zorluk seviyeniz korundu. Yanlış yaptığınız konular bir sonraki test kurgusuna dahil edilecek.</span>`;
-        }
-
-        document.getElementById("levelFeedback").innerHTML = levelFeedbackText;
-        localStorage.setItem('khk_infinite_adaptive_state', JSON.stringify(appState));
-        updateInfoPanel();
-    }
-
-    function retryTopic() {
-        resetQuizInterface();
-    }
-
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    }
-
-    // FRONTEND TESTLERİNİN SAĞLIKLI ÇALIŞMASI İÇİN GELİŞMİŞ LOCAL MATRİS SİMÜLATÖRÜ
-    function generateFallbackQuestions(topic, level) {
-        const mockDataPool = {
-            "Donanım ve Sayı Sistemleri": [
-                { q: "İşlemcinin (CPU) içerisindeki en hızlı hafıza birimi ve katmanı aşağıdakilerden hangisidir?", a: "Register (Yazmaçlar) ve L1 Önbellek", b: "Sanal Bellek (Swap)", c: "DRAM Hücreleri", d: "NVMe Kontrolcüsü", e: "Güney Köprüsü Sram Bloğu" },
-                { q: "ECC bellek teknolojisinin standart RAM modüllerinden temel farkı nedir?", a: "Veri hatalarını algılayıp tek bitlik hataları otomatik düzeltebilmesi", b: "XMP profilleriyle iki kat frekansa çıkması", c: "Anakart slotuna ters takılabilen pin mimarisi", d: "Sadece sıvı soğutmalı sistemlerde çalışabilmesi", e: "Depolama diskini tamamen devre dışı bırakması" },
-                { q: "Onaltılık (Hexadecimal) sayı sistemindeki '1A' ifadesinin onluk (Decimal) sistemdeki karşılığı nedir?", a: "26", b: "16", b: "32", d: "10", e: "42" }
-            ],
-            "Algoritma ve Programlama": [
-                { q: "Aşağıdaki veri yapılarından hangisi 'Son Giren İlk Çıkar' (LIFO) prensibine göre çalışır?", a: "Yığıt (Stack)", b: "Kuyruk (Queue)", c: "Bağlı Liste (Linked List)", d: "Sözlük (Dictionary)", e: "İkili Arama Ağacı" },
-                { q: "Zaman karmaşıklığı analizinde en kötü durum senaryosu O(1) olan işlem hangisidir?", a: "Boyutu bilinen bir dizinin indeksine doğrudan erişmek", b: "Sıralanmamış bir dizide doğrusal arama yapmak", c: "Matris çarpanlarını rekürsif toplamak", d: "Graf yapısında en kısa yolu hesaplamak", e: "Metin içindeki tüm kelimeleri alfabetik sıralamak" },
-                { q: "Nesne Yönelimli Programlamada (OOP) alt sınıfların üst sınıf özelliklerini devralmasına ne ad verilir?", a: "Kalıtım (Inheritance)", b: "Kapsülleme (Encapsulation)", c: "Çok Biçimlilik (Polymorphism)", d: "Soyutlama (Abstraction)", e: "Arayüz (Interface)" }
-            ],
-            "Ağlar ve Siber Güvenlik": [
-                { q: "OSI referans modelinde yönlendirme (Routing) ve IP paket kontrolü hangi katmanda gerçekleştirilir?", a: "Ağ Katmanı (Network Layer)", b: "Taşıma Katmanı (Transport Layer)", c: "Fiziksel Katman (Physical Layer)", d: "Uygulama Katmanı (Application Layer)", e: "Veri Bağı Katmanı (Data Link)" },
-                { q: "Üçlü el sıkışma (3-way handshake) protokolü hangi ağ protokolünün güvenli bağlantı kurmasında zorunludur?", a: "TCP", b: "UDP", c: "ICMP", d: "DNS", e: "DHCP" },
-                { q: "Kullanıcıları sahte web sitelerine yönlendirerek şifre çalmayı hedefleyen siber saldırı türü hangisidir?", a: "Oltalama (Phishing)", b: "DDoS", c: "SQL Injection", d: "Man-in-the-Middle", e: "Ransomware" }
-            ],
-            "Veritabanı Yönetim Sistemleri": [
-                { q: "ACID ilkelerindeki 'Atomicity' (Bütünlük) kuralı tam olarak neyi garanti eder?", a: "İşlemlerin (Transaction) ya tamamen gerçekleşmesini ya da hata anında tamamen geri alınmasını", b: "Aynı anda binlerce kullanıcının veri yazabilmesini", c: "Veritabanının disk üzerinde şifreli saklanmasını", d: "İndeksleme maliyetlerinin sıfıra indirilmesini", e: "Tablolar arasındaki yabancı anahtar ilişkilerini" },
-                { q: "İlişkisel veritabanlarında veri tekrarını önlemek ve mantıksal tablolar kurmak için yapılan işleme ne ad verilir?", a: "Normalizasyon", b: "İndeksleme", c: "Miras Alma", d: "Loglama", e: "Replika Oluşturma" }
-            ],
-            "Web Geliştirme Teknolojileri": [
-                { q: "Tarayıcıda JavaScript kodlarının asenkron çalışmasını ve sayfa yenilenmeden veri çekilmesini sağlayan mimari nedir?", a: "AJAX / Fetch API", b: "CSS Grid Sistemi", c: "DOM Parser", d: "Session Storage API", e: "Sass Önderleyicisi" },
-                { q: "Bir web sayfasının ilk yüklenme performans kriterlerinden olan FCP teriminin açılımı nedir?", a: "First Contentful Paint", b: "Fast Connection Protocol", c: "Flexbox Control Panel", d: "File Transfer Process", e: "Frontend Core Package" }
-            ]
-        };
-
-        let activePool = mockDataPool[topic] || mockDataPool["Donanım ve Sayı Sistemleri"];
-        let generated = [];
-
-        for (let i = 0; i < TEST_LIMIT; i++) {
-            let base = activePool[i % activePool.length];
-            let lvlPrefix = level === 1 ? "[Kolay]" : level === 2 ? "[Orta]" : "[Zor]";
-            
-            generated.push({
-                q
