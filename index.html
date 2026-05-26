@@ -227,7 +227,6 @@
 </div>
 
 <script>
-    // Konu Başlıkları
     const topics = [
         "Donanım ve Sayı Sistemleri",
         "Algoritma ve Programlama",
@@ -237,16 +236,13 @@
     ];
 
     // AI API Konfigürasyonu
-    // Kendi API uç noktanızı ve anahtarınızı buraya entegre edebilirsiniz.
     const AI_CONFIG = {
-        apiUrl: "[https://api.openai.com/v1/chat/completions](https://api.openai.com/v1/chat/completions)", // Veya kendi backend/proxy URL'niz
-        apiKey: "YOUR_API_KEY_HERE", // Güvenlik için prod ortamında proxy kullanılması önerilir
+        apiUrl: "https://api.openai.com/v1/chat/completions", 
+        apiKey: "YOUR_API_KEY_HERE", 
         model: "gpt-4o-mini" 
     };
 
-    // LocalStorage Durum Yönetimi
     let appState = JSON.parse(localStorage.getItem('khk_infinite_adaptive_state')) || {};
-
     let selectedTopic = "";
     let currentQuestions = [];
     let currentQuestionIdx = 0;
@@ -266,11 +262,10 @@
         topics.forEach(topic => {
             if (!appState[topic]) {
                 appState[topic] = {
-                    currentLevel: 1, // 1: Kolay, 2: Orta, 3: Zor
-                    wrongQueue: []   // Yanlış yapılan eski soruların havuzu
+                    currentLevel: 1, 
+                    wrongQueue: []   
                 };
             }
-
             const state = appState[topic];
             const card = document.createElement("div");
             card.className = "topic-card";
@@ -295,7 +290,6 @@
         document.getElementById("homePage").classList.remove("active");
         document.getElementById("quizPage").classList.add("active");
         document.getElementById("currentTopicTitle").innerText = topic;
-        
         updateInfoPanel();
         resetQuizInterface();
     }
@@ -345,15 +339,14 @@
             <div class="search-log">POST -> ${AI_CONFIG.apiUrl} <br>Konu: ${selectedTopic} | Seviye: ${levelText}</div>
         `;
 
-        // Yapay zekaya gönderilecek sistem yönergesi ve kurgusu
         const systemPrompt = `Sen bir akademik bilişim sınavı soru üretme motorusun. Görevin, sana verilen konu ve zorluk seviyesine uygun, tamamen benzersiz ve teknik doğruluğu yüksek 5 şıklı (A, B, C, D, E) tam olarak ${TEST_LIMIT} adet soru üretmektir.
-        Cevabını SADECE ve SADECE aşağıda belirtilen geçerli JSON array formatında döndürmelisin. Markdown etiketleri (\`\`\`json vb.), ekstra açıklama, giriş veya sonuç yazısı ASLA içermemelidir.
+        Cevabını SADECE ve SADECE aşağıda belirtilen geçerli JSON array formatında döndürmelisin. Şıklarda cevabın doğru olduğunu belirten hiçbir ipucu veya "(Doğru Cevap)" gibi ibareler ASLA yer almamalıdır. Düz metin olmalıdır. Markdown etiketleri (\`\`\`json vb.) kesinlikle içermemelidir.
         
         JSON Format Şeması:
         [
           {
-            "q": "Soru metni buraya",
-            "a": "Doğru şık metni",
+            "q": "Gerçek ve net bir teknik soru cümlesi?",
+            "a": "Doğru şık metni (Doğal bir cevap cümlesi)",
             "b": "Yanlış çeldirici 1",
             "c": "Yanlış çeldirici 2",
             "d": "Yanlış çeldirici 3",
@@ -363,12 +356,11 @@
 
         const userPrompt = `Konu Başlığı: "${selectedTopic}"
         Hedef Zorluk Seviyesi: "${levelText}"
-        Kullanıcının Geçmişte Yanlış Yaptığı Bazı Soru Örnekleri/Temaları (Eğer boş değilse bu temaları da pekiştirmek için kullan): ${JSON.stringify(state.wrongQueue.slice(-3))}
+        Kullanıcının Geçmişte Yanlış Yaptığı Bazı Soru Örnekleri/Temaları: ${JSON.stringify(state.wrongQueue.slice(-3))}
         
         Lütfen kurallara uyarak tam olarak ${TEST_LIMIT} adet kaliteli soru içeren JSON array dökümanını oluştur.`;
 
         try {
-            // Eğer geçerli bir API Key girilmediyse test amaçlı doğrudan Fallback (Simülatör) çalıştır
             if (AI_CONFIG.apiKey === "YOUR_API_KEY_HERE" || !AI_CONFIG.apiKey) {
                 throw new Error("API_KEY_NOT_SET");
             }
@@ -389,14 +381,11 @@
                 })
             });
 
-            if (!response.ok) {
-                throw new Error(`API_ERROR: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`API_ERROR: ${response.status}`);
 
             const data = await response.json();
             let aiResponseText = data.choices[0].message.content.trim();
             
-            // Olası markdown bloklarını temizle
             if(aiResponseText.startsWith("```json")) aiResponseText = aiResponseText.replace("```json", "");
             if(aiResponseText.endsWith("```")) aiResponseText = aiResponseText.substring(0, aiResponseText.length - 3);
             aiResponseText = aiResponseText.trim();
@@ -408,31 +397,32 @@
             btnStart.style.display = "inline-block";
 
         } catch (error) {
-            console.warn("AI API Hatası veya API Anahtarı Eksik. Local Fallback Motoru Devreye Alınıyor...", error);
-            statusMsg.innerHTML = "⚠️ Canlı API bağlantısı simüle ediliyor (Lokal Test Modu Aktif)...";
+            console.warn("AI API Hatası veya API Anahtarı Eksik. Akıllı Fallback Motoru Çalıştırılıyor...", error);
+            statusMsg.innerHTML = "⚠️ Canlı API bağlantısı simüle ediliyor (Gelişmiş Lokal Sınav Modu)...";
             
             setTimeout(() => {
                 const fallbackData = generateFallbackQuestions(selectedTopic, state.currentLevel);
                 processGeneratedQuestions(fallbackData);
-                statusMsg.innerHTML = "🎯 Yapay Zeka (Simüle) soruları başarıyla üretti! Test hazır.";
+                statusMsg.innerHTML = "🎯 Gelişmiş Test Motoru soruları başarıyla üretti! Test hazır.";
                 btnStart.style.display = "inline-block";
             }, 1000);
         }
     }
 
-    // Gelen ham veriyi arayüz için şıkları karıştırarak hazır hale getiren fonksiyon
     function processGeneratedQuestions(questionsArray) {
         currentQuestions = questionsArray.map(item => {
+            // Şıkların orijinal hallerini ve doğruluk durumlarını tutan temiz yapı
             let options = [
-                { text: item.a, isCorrect: true },
-                { text: item.b, isCorrect: false },
-                { text: item.c, isCorrect: false },
-                { text: item.d, isCorrect: false },
-                { text: item.e, isCorrect: false }
+                { text: item.a, isCorrect: true, id: "correct_ans" },
+                { text: item.b, isCorrect: false, id: "w1" },
+                { text: item.c, isCorrect: false, id: "w2" },
+                { text: item.d, isCorrect: false, id: "w3" },
+                { text: item.e, isCorrect: false, id: "w4" }
             ];
             return {
                 text: item.q,
-                options: shuffleArray(options)
+                options: shuffleArray(options),
+                original: item // Referans kontrolü için orijinal nesneyi sakla
             };
         });
     }
@@ -477,11 +467,11 @@
 
         let rawQuestionObj = {
             q: currentQ.text,
-            a: currentQ.options.find(o => o.isCorrect).text,
-            b: currentQ.options.find(o => !o.isCorrect).text,
-            c: currentQ.options.filter(o => !o.isCorrect)[1]?.text || "Çeldirici C",
-            d: currentQ.options.filter(o => !o.isCorrect)[2]?.text || "Çeldirici D",
-            e: currentQ.options.filter(o => !o.isCorrect)[3]?.text || "Çeldirici E"
+            a: currentQ.original.a,
+            b: currentQ.original.b,
+            c: currentQ.original.c,
+            d: currentQ.original.d,
+            e: currentQ.original.e
         };
 
         if (selectedOpt.isCorrect) {
@@ -490,7 +480,6 @@
             score++;
             document.getElementById("scoreTracker").innerText = `Doğru: ${score}`;
             
-            // Doğru bildiyse, bu soruyu eski yanlışlar hafızasından kalıcı olarak temizle
             let state = appState[selectedTopic];
             let foundIdx = state.wrongQueue.findIndex(item => item.q === currentQ.text);
             if(foundIdx > -1) state.wrongQueue.splice(foundIdx, 1);
@@ -499,9 +488,9 @@
             selectedLi.classList.add("wrong");
             document.getElementById("feedbackMessage").innerHTML = "<span style='color:var(--danger-color);'>✗ Yanlış</span>";
             
-            // Gelecek testlerde öncelikli hatırlatılması için yanlış havuzuna ekle
             wrongQuestionsInThisTest.push(rawQuestionObj);
 
+            // Doğru şıkkı arayüzde yeşil renkle yakala
             for (let li of optionsList) {
                 let optText = li.innerText.substring(3).trim();
                 let matchOpt = currentQ.options.find(o => o.text.trim() === optText);
@@ -532,14 +521,12 @@
         const state = appState[selectedTopic];
         let levelFeedbackText = "";
 
-        // Yanlışları ana persist hafızaya kaydet
         wrongQuestionsInThisTest.forEach(wQ => {
             if(!state.wrongQueue.some(q => q.q === wQ.q)) {
                 state.wrongQueue.push(wQ);
             }
         });
 
-        // ADAPTİF SEVİYE HESAPLAMA (%70 Geçme Barajı)
         if (percentage >= 70) {
             if (state.currentLevel < 3) {
                 state.currentLevel++;
@@ -559,7 +546,6 @@
         }
 
         document.getElementById("levelFeedback").innerHTML = levelFeedbackText;
-        
         localStorage.setItem('khk_infinite_adaptive_state', JSON.stringify(appState));
         updateInfoPanel();
     }
@@ -576,24 +562,40 @@
         return array;
     }
 
-    // FRONTEND TESTİ İÇİN GEÇİCİ LOCAL AI SİMÜLATÖRÜ (FALLBACK MOTORU)
+    // FRONTEND TESTLERİNİN SAĞLIKLI ÇALIŞMASI İÇİN GELİŞMİŞ LOCAL MATRİS SİMÜLATÖRÜ
     function generateFallbackQuestions(topic, level) {
-        let samplePool = [];
-        let lvlTag = level === 1 ? "[Seviye 1 - Kolay AI]" : level === 2 ? "[Seviye 2 - Orta AI]" : "[Seviye 3 - İleri AI]";
-        
-        for(let i=1; i<=TEST_LIMIT; i++) {
-            samplePool.push({
-                q: `${lvlTag} Yapay zeka tarafından üretilen ${topic} ile ilgili ${i}. dinamik senaryo sorusu soruluyor?`,
-                a: `AI tarafından doğrulanmış en optimize teknik çözüm şıkkı (Doğru Cevap)`,
-                b: `Gereksiz sistem yükü oluşturan hatalı mimari yaklaşım`,
-                c: `Eski sürüm protokol veya uyumsuz kütüphane entegrasyonu`,
-                d: `Güvenlik zafiyetine ve mantıksal veri sızıntılarına yol açan kurgu`,
-                e: `Süreç zaman aşımı (Timeout) hatasına sebep olan senkronizasyon yapısı`
-            });
-        }
-        return samplePool;
-    }
-</script>
+        const mockDataPool = {
+            "Donanım ve Sayı Sistemleri": [
+                { q: "İşlemcinin (CPU) içerisindeki en hızlı hafıza birimi ve katmanı aşağıdakilerden hangisidir?", a: "Register (Yazmaçlar) ve L1 Önbellek", b: "Sanal Bellek (Swap)", c: "DRAM Hücreleri", d: "NVMe Kontrolcüsü", e: "Güney Köprüsü Sram Bloğu" },
+                { q: "ECC bellek teknolojisinin standart RAM modüllerinden temel farkı nedir?", a: "Veri hatalarını algılayıp tek bitlik hataları otomatik düzeltebilmesi", b: "XMP profilleriyle iki kat frekansa çıkması", c: "Anakart slotuna ters takılabilen pin mimarisi", d: "Sadece sıvı soğutmalı sistemlerde çalışabilmesi", e: "Depolama diskini tamamen devre dışı bırakması" },
+                { q: "Onaltılık (Hexadecimal) sayı sistemindeki '1A' ifadesinin onluk (Decimal) sistemdeki karşılığı nedir?", a: "26", b: "16", b: "32", d: "10", e: "42" }
+            ],
+            "Algoritma ve Programlama": [
+                { q: "Aşağıdaki veri yapılarından hangisi 'Son Giren İlk Çıkar' (LIFO) prensibine göre çalışır?", a: "Yığıt (Stack)", b: "Kuyruk (Queue)", c: "Bağlı Liste (Linked List)", d: "Sözlük (Dictionary)", e: "İkili Arama Ağacı" },
+                { q: "Zaman karmaşıklığı analizinde en kötü durum senaryosu O(1) olan işlem hangisidir?", a: "Boyutu bilinen bir dizinin indeksine doğrudan erişmek", b: "Sıralanmamış bir dizide doğrusal arama yapmak", c: "Matris çarpanlarını rekürsif toplamak", d: "Graf yapısında en kısa yolu hesaplamak", e: "Metin içindeki tüm kelimeleri alfabetik sıralamak" },
+                { q: "Nesne Yönelimli Programlamada (OOP) alt sınıfların üst sınıf özelliklerini devralmasına ne ad verilir?", a: "Kalıtım (Inheritance)", b: "Kapsülleme (Encapsulation)", c: "Çok Biçimlilik (Polymorphism)", d: "Soyutlama (Abstraction)", e: "Arayüz (Interface)" }
+            ],
+            "Ağlar ve Siber Güvenlik": [
+                { q: "OSI referans modelinde yönlendirme (Routing) ve IP paket kontrolü hangi katmanda gerçekleştirilir?", a: "Ağ Katmanı (Network Layer)", b: "Taşıma Katmanı (Transport Layer)", c: "Fiziksel Katman (Physical Layer)", d: "Uygulama Katmanı (Application Layer)", e: "Veri Bağı Katmanı (Data Link)" },
+                { q: "Üçlü el sıkışma (3-way handshake) protokolü hangi ağ protokolünün güvenli bağlantı kurmasında zorunludur?", a: "TCP", b: "UDP", c: "ICMP", d: "DNS", e: "DHCP" },
+                { q: "Kullanıcıları sahte web sitelerine yönlendirerek şifre çalmayı hedefleyen siber saldırı türü hangisidir?", a: "Oltalama (Phishing)", b: "DDoS", c: "SQL Injection", d: "Man-in-the-Middle", e: "Ransomware" }
+            ],
+            "Veritabanı Yönetim Sistemleri": [
+                { q: "ACID ilkelerindeki 'Atomicity' (Bütünlük) kuralı tam olarak neyi garanti eder?", a: "İşlemlerin (Transaction) ya tamamen gerçekleşmesini ya da hata anında tamamen geri alınmasını", b: "Aynı anda binlerce kullanıcının veri yazabilmesini", c: "Veritabanının disk üzerinde şifreli saklanmasını", d: "İndeksleme maliyetlerinin sıfıra indirilmesini", e: "Tablolar arasındaki yabancı anahtar ilişkilerini" },
+                { q: "İlişkisel veritabanlarında veri tekrarını önlemek ve mantıksal tablolar kurmak için yapılan işleme ne ad verilir?", a: "Normalizasyon", b: "İndeksleme", c: "Miras Alma", d: "Loglama", e: "Replika Oluşturma" }
+            ],
+            "Web Geliştirme Teknolojileri": [
+                { q: "Tarayıcıda JavaScript kodlarının asenkron çalışmasını ve sayfa yenilenmeden veri çekilmesini sağlayan mimari nedir?", a: "AJAX / Fetch API", b: "CSS Grid Sistemi", c: "DOM Parser", d: "Session Storage API", e: "Sass Önderleyicisi" },
+                { q: "Bir web sayfasının ilk yüklenme performans kriterlerinden olan FCP teriminin açılımı nedir?", a: "First Contentful Paint", b: "Fast Connection Protocol", c: "Flexbox Control Panel", d: "File Transfer Process", e: "Frontend Core Package" }
+            ]
+        };
 
-</body>
-</html>
+        let activePool = mockDataPool[topic] || mockDataPool["Donanım ve Sayı Sistemleri"];
+        let generated = [];
+
+        for (let i = 0; i < TEST_LIMIT; i++) {
+            let base = activePool[i % activePool.length];
+            let lvlPrefix = level === 1 ? "[Kolay]" : level === 2 ? "[Orta]" : "[Zor]";
+            
+            generated.push({
+                q
